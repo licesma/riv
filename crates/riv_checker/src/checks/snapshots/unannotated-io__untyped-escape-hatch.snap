@@ -1,0 +1,5 @@
+---
+source: crates/riv_checker/src/checks/mod.rs
+expression: "check_fixture(\"unannotated-io/untyped-escape-hatch\")"
+---
+

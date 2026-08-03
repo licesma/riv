@@ -1,0 +1,5 @@
+name: escape-hatch
+strict: true
+steps:
+  - preprocess.py
+  - train.py

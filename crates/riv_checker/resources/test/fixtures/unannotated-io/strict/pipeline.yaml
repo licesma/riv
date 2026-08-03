@@ -1,0 +1,5 @@
+name: strict
+strict: true
+steps:
+  - preprocess.py
+  - train.py

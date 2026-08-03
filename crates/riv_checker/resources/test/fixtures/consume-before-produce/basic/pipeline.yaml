@@ -1,0 +1,4 @@
+name: basic
+steps:
+  - train.py
+  - preprocess.py

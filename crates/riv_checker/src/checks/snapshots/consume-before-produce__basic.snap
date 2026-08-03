@@ -1,0 +1,19 @@
+---
+source: crates/riv_checker/src/checks/mod.rs
+expression: "check_fixture(\"consume-before-produce/basic\")"
+---
+error[consume-before-produce]: `users.pkl` is consumed before it is produced
+  --> resources/test/fixtures/consume-before-produce/basic/train.py:3:9
+   |
+ 3 | users = UsersDf.riv_in("users.pkl")
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^ `users.pkl` does not exist yet
+   |
+   = note: `resources/test/fixtures/consume-before-produce/basic/preprocess.py` produces it, but runs later — steps run in the order listed; riv does not reorder them
+
+error[consume-before-produce]: `model.pkl` is consumed before it is produced
+  --> resources/test/fixtures/consume-before-produce/basic/train.py:4:9
+   |
+ 4 | model = Model.riv_in("model.pkl")
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^ `model.pkl` does not exist yet
+   |
+   = note: no step in this pipeline produces it, and it does not exist on disk

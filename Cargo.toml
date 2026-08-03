@@ -1,0 +1,53 @@
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.95"
+homepage = "https://github.com/licesma/riv"
+repository = "https://github.com/licesma/riv"
+authors = ["Esteban Licea <licesma@gmail.com>"]
+license = "MIT"
+
+[workspace.dependencies]
+riv_checker = { path = "crates/riv_checker" }
+
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+ruff_python_ast = "0.0.7"
+ruff_python_parser = "0.0.7"
+ruff_text_size = "0.0.7"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+
+insta = { version = "1.43", features = ["filters"] }
+insta-cmd = "0.6"
+tempfile = "3.20"
+
+[workspace.lints.rust]
+unsafe_code = "warn"
+unreachable_pub = "warn"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -2 }
+# Curated allow-list, modeled on ruff's.
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+similar_names = "allow"
+
+dbg_macro = "warn"
+print_stdout = "warn"
+exit = "warn"
+
+[profile.release]
+lto = "fat"
+
+# Release minus fat LTO, for benchmarks and profiling.
+[profile.profiling]
+inherits = "release"
+lto = false
+debug = true

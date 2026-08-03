@@ -1,0 +1,20 @@
+[build-system]
+requires = ["maturin>=1.9,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "riv"
+version = "0.1.0"           # keep equal to crates/riv/Cargo.toml; bump both in one commit
+description = "Typed data pipelines for Python: static checker + tiny runtime."
+requires-python = ">=3.9"
+readme = "README.md"
+license = { text = "MIT" }
+# no dependencies key -> runtime is stdlib-only; pandas/pyarrow are the USER's
+# deps, imported lazily inside format plugins with a clear error if absent
+
+[tool.maturin]
+bindings = "bin"
+manifest-path = "crates/riv/Cargo.toml"
+module-name = "riv"
+python-source = "python"
+strip = true

@@ -1,0 +1,16 @@
+---
+source: crates/riv_checker/src/checks/mod.rs
+expression: "check_fixture(\"schema-mismatch/basic\")"
+---
+error[schema-mismatch]: `users.pkl` is consumed as `schemas.OrdersDf` but was produced as `schemas.UsersDf`
+  --> resources/test/fixtures/schema-mismatch/basic/train.py:3:10
+   |
+ 3 | orders = OrdersDf.riv_in("users.pkl")
+   |          ^^^^^^^^ consumed as `schemas.OrdersDf`
+   |
+  ::: resources/test/fixtures/schema-mismatch/basic/preprocess.py:4:1
+   |
+ 4 | UsersDf.riv_out(users, "users.pkl")
+   | ------- produced as `schemas.UsersDf`
+   |
+   = note: schema matching is name-level: producer and consumer must use the same schema symbol

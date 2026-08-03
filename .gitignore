@@ -1,0 +1,11 @@
+/target
+/dist
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+*.pending-snap
+
+# Local agent docs — never push to GitHub
+/documentation/

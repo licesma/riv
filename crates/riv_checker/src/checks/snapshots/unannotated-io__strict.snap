@@ -1,0 +1,11 @@
+---
+source: crates/riv_checker/src/checks/mod.rs
+expression: "check_fixture(\"unannotated-io/strict\")"
+---
+error[unannotated-io]: artifact `users.pkl` is produced without a schema; the checker cannot see it
+  --> resources/test/fixtures/unannotated-io/strict/preprocess.py:4:1
+   |
+ 4 | riv_out(users, "users.pkl")
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ bare `riv_out()`
+   |
+   = help: attach a schema (`UsersDf.riv_out(df, path)`) or mark the decision with `Untyped.riv_out(...)`
