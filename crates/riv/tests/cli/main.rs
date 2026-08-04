@@ -57,11 +57,11 @@ fn typed_project(test: &CliTest) {
     );
     test.write(
         "preprocess.py",
-        "from schemas import UsersDf\n\nusers = [1, 2, 3]\nUsersDf.riv_out(users, \"users.pkl\")\nprint(\"step: preprocess\")\n",
+        "from riv import riv_out\nfrom schemas import UsersDf\n\nusers = [1, 2, 3]\nriv_out[UsersDf](users, \"users.pkl\")\nprint(\"step: preprocess\")\n",
     );
     test.write(
         "train.py",
-        "from schemas import UsersDf\n\nusers = UsersDf.riv_in(\"users.pkl\")\nprint(f\"step: train ({len(users)} users)\")\n",
+        "from riv import riv_in\nfrom schemas import UsersDf\n\nusers = riv_in[UsersDf](\"users.pkl\")\nprint(f\"step: train ({len(users)} users)\")\n",
     );
 }
 
@@ -97,7 +97,7 @@ fn check_warns_on_unannotated_io() {
      3 | riv_out([1], "users.pkl")
        | ^^^^^^^^^^^^^^^^^^^^^^^^^ bare `riv_out()`
        |
-       = help: attach a schema (`UsersDf.riv_out(df, path)`) or mark the decision with `Untyped.riv_out(...)`
+       = help: attach a schema (`riv_out[UsersDf](df, path)`) or mark the decision with `riv_out[Untyped](...)`
 
     Checked 1 pipeline: 0 errors, 1 warning.
 
@@ -126,7 +126,7 @@ fn strict_promotes_unannotated_io_to_error() {
      3 | riv_out([1], "users.pkl")
        | ^^^^^^^^^^^^^^^^^^^^^^^^^ bare `riv_out()`
        |
-       = help: attach a schema (`UsersDf.riv_out(df, path)`) or mark the decision with `Untyped.riv_out(...)`
+       = help: attach a schema (`riv_out[UsersDf](df, path)`) or mark the decision with `riv_out[Untyped](...)`
 
     Checked 1 pipeline: 1 error, 0 warnings.
 
@@ -213,17 +213,17 @@ fn run_refuses_pipeline_that_does_not_check() {
     );
     test.write(
         "train.py",
-        "from schemas import UsersDf\n\nusers = UsersDf.riv_in(\"users.pkl\")\nprint(\"ran anyway\")\n",
+        "from riv import riv_in\nfrom schemas import UsersDf\n\nusers = riv_in[UsersDf](\"users.pkl\")\nprint(\"ran anyway\")\n",
     );
     assert_cmd_snapshot!(test.command().args(["pipeline.yaml", "run"]), @r#"
     success: false
     exit_code: 1
     ----- stdout -----
     error[consume-before-produce]: `users.pkl` is consumed before it is produced
-      --> train.py:3:9
+      --> train.py:4:9
        |
-     3 | users = UsersDf.riv_in("users.pkl")
-       |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^ `users.pkl` does not exist yet
+     4 | users = riv_in[UsersDf]("users.pkl")
+       |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `users.pkl` does not exist yet
        |
        = note: no step in this pipeline produces it, and it does not exist on disk
 
@@ -243,7 +243,7 @@ fn run_no_check_is_the_escape_hatch() {
     // it one that would fail check.
     test.write(
         "step.py",
-        "from riv import Untyped\nimport pathlib\n\nUntyped.riv_out([1], \"blob.pkl\")\nprint(\"unchecked step ran\")\n",
+        "from riv import Untyped, riv_out\nimport pathlib\n\nriv_out[Untyped]([1], \"blob.pkl\")\nprint(\"unchecked step ran\")\n",
     );
     test.write(
         "pipeline.yaml",

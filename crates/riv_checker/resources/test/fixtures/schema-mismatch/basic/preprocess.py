@@ -1,4 +1,5 @@
+from riv import riv_out
 from schemas import UsersDf
 
 users = [1, 2, 3]
-UsersDf.riv_out(users, "users.pkl")
+riv_out[UsersDf](users, "users.pkl")

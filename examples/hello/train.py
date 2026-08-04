@@ -1,8 +1,9 @@
+from riv import riv_in, riv_out
 from schemas import Metrics, UsersDf
 
-users = UsersDf.riv_in("users.pkl")
+users = riv_in[UsersDf]("users.pkl")
 
 metrics = {"n_users": len(users), "mean_name_len": sum(len(u["name"]) for u in users) / len(users)}
 
-Metrics.riv_out(metrics, "metrics.json")
+riv_out[Metrics](metrics, "metrics.json")
 print(f"train: {metrics}")

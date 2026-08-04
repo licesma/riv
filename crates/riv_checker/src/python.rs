@@ -35,9 +35,9 @@ impl Direction {
 pub enum SchemaRef {
     /// Bare `riv_in(...)` / `riv_out(...)` — the gradual-typing warning.
     Unannotated,
-    /// `Untyped.riv_in(...)` — the explicit escape hatch; emits nothing.
+    /// `riv_in[Untyped](...)` — the explicit escape hatch; emits nothing.
     Untyped,
-    /// `UsersDf.riv_in(...)` — qualified symbol, e.g. `schemas.UsersDf`.
+    /// `riv_in[UsersDf](...)` — qualified symbol, e.g. `schemas.UsersDf`.
     Named(String),
 }
 
@@ -49,7 +49,7 @@ pub struct IoCall {
     /// are invisible to the checker in v1.
     pub path: Option<String>,
     pub call_range: TextRange,
-    /// Range of the schema expression (`UsersDf` in `UsersDf.riv_in(...)`).
+    /// Range of the schema expression (`UsersDf` in `riv_in[UsersDf](...)`).
     pub schema_range: Option<TextRange>,
 }
 
@@ -204,29 +204,50 @@ impl ScanVisitor {
         }
     }
 
-    /// Resolve the receiver of `<schema>.riv_in(...)` to a schema reference,
-    /// or `None` when the receiver is the riv module itself (an unannotated
-    /// `riv.riv_in(...)`).
-    fn resolve_receiver(&self, receiver: &Expr) -> Option<SchemaRef> {
-        match receiver {
+    /// Resolve `riv_in` / `riv.riv_in` (possibly aliased) to a direction.
+    fn resolve_riv_func(&self, expr: &Expr) -> Option<Direction> {
+        match expr {
             Expr::Name(name) => match self.bindings.get(name.id.as_str()) {
-                Some(Binding::RivModule) => None,
+                Some(Binding::RivFunc(direction)) => Some(*direction),
+                _ => None,
+            },
+            Expr::Attribute(attr) => {
+                if matches!(attr.value.as_ref(), Expr::Name(n)
+                    if matches!(self.bindings.get(n.id.as_str()), Some(Binding::RivModule)))
+                {
+                    match attr.attr.as_str() {
+                        "riv_in" => Some(Direction::In),
+                        "riv_out" => Some(Direction::Out),
+                        _ => None,
+                    }
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
+
+    /// Resolve the subscript of `riv_in[<schema>](...)` to a schema reference.
+    fn resolve_schema_expr(&self, expr: &Expr) -> Option<SchemaRef> {
+        match expr {
+            Expr::Name(name) => match self.bindings.get(name.id.as_str()) {
                 Some(Binding::Untyped) => Some(SchemaRef::Untyped),
                 Some(Binding::Imported(qualified) | Binding::LocalClass(qualified)) => {
                     Some(SchemaRef::Named(qualified.clone()))
                 }
-                // Best effort: an unresolvable receiver still names a schema.
+                // Best effort: an unresolvable name still names a schema.
                 _ => Some(SchemaRef::Named(name.id.to_string())),
             },
             Expr::Attribute(attr) => {
-                // `riv.Untyped.riv_out(...)`
+                // `riv_in[riv.Untyped](...)`
                 if let Expr::Name(n) = attr.value.as_ref()
                     && matches!(self.bindings.get(n.id.as_str()), Some(Binding::RivModule))
                     && attr.attr.as_str() == "Untyped"
                 {
                     return Some(SchemaRef::Untyped);
                 }
-                dotted_name(receiver).map(SchemaRef::Named)
+                dotted_name(expr).map(SchemaRef::Named)
             }
             _ => None,
         }
@@ -234,28 +255,21 @@ impl ScanVisitor {
 
     fn record_call(&mut self, call: &ast::ExprCall) {
         let (direction, schema, schema_range) = match call.func.as_ref() {
-            Expr::Name(name) => match self.bindings.get(name.id.as_str()) {
-                Some(Binding::RivFunc(direction)) => (*direction, SchemaRef::Unannotated, None),
-                _ => return,
-            },
-            Expr::Attribute(attr) => {
-                let direction = match attr.attr.as_str() {
-                    "riv_in" => Direction::In,
-                    "riv_out" => Direction::Out,
-                    _ => return,
+            // `riv_in[UsersDf](...)` / `riv.riv_in[UsersDf](...)`
+            Expr::Subscript(sub) => {
+                let Some(direction) = self.resolve_riv_func(sub.value.as_ref()) else {
+                    return;
                 };
-                match self.resolve_receiver(attr.value.as_ref()) {
-                    Some(schema) => (direction, schema, Some(attr.value.range())),
-                    // `riv.riv_in(...)`: the module is the receiver.
-                    None if matches!(attr.value.as_ref(), Expr::Name(n)
-                        if matches!(self.bindings.get(n.id.as_str()), Some(Binding::RivModule))) =>
-                    {
-                        (direction, SchemaRef::Unannotated, None)
-                    }
-                    None => return,
-                }
+                let Some(schema) = self.resolve_schema_expr(sub.slice.as_ref()) else {
+                    return;
+                };
+                (direction, schema, Some(sub.slice.range()))
             }
-            _ => return,
+            // Bare `riv_in(...)` / `riv.riv_in(...)`: unannotated.
+            func => match self.resolve_riv_func(func) {
+                Some(direction) => (direction, SchemaRef::Unannotated, None),
+                None => return,
+            },
         };
 
         let path_index = match direction {

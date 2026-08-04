@@ -1,3 +1,4 @@
+from riv import riv_in
 from schemas import OrdersDf
 
-orders = OrdersDf.riv_in("users.pkl")
+orders = riv_in[OrdersDf]("users.pkl")

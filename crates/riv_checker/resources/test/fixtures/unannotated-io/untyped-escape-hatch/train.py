@@ -1,3 +1,3 @@
-from riv import Untyped
+from riv import Untyped, riv_in
 
-blob = Untyped.riv_in("blob.pkl")
+blob = riv_in[Untyped]("blob.pkl")

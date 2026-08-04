@@ -1,3 +1,3 @@
-from riv import Untyped
+from riv import Untyped, riv_out
 
-Untyped.riv_out([1], "out.pkl")
+riv_out[Untyped]([1], "out.pkl")

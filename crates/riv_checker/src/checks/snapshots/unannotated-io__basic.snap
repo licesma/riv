@@ -8,7 +8,7 @@ warning[unannotated-io]: artifact `users.pkl` is produced without a schema; the 
  4 | riv_out(users, "users.pkl")
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ bare `riv_out()`
    |
-   = help: attach a schema (`UsersDf.riv_out(df, path)`) or mark the decision with `Untyped.riv_out(...)`
+   = help: attach a schema (`riv_out[UsersDf](df, path)`) or mark the decision with `riv_out[Untyped](...)`
 
 warning[unannotated-io]: artifact `users.pkl` is consumed without a schema; the checker cannot see it
   --> resources/test/fixtures/unannotated-io/basic/train.py:3:9
@@ -16,4 +16,4 @@ warning[unannotated-io]: artifact `users.pkl` is consumed without a schema; the 
  3 | users = riv_in("users.pkl")
    |         ^^^^^^^^^^^^^^^^^^^ bare `riv_in()`
    |
-   = help: attach a schema (`df = UsersDf.riv_in(path)`) or mark the decision with `Untyped.riv_in(...)`
+   = help: attach a schema (`df = riv_in[UsersDf](path)`) or mark the decision with `riv_in[Untyped](...)`

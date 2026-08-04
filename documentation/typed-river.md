@@ -24,7 +24,7 @@ model = train_model(df)
 sees the data flow: `riv check` verifies every artifact is produced
 before it is consumed.
 
-Add a schema to check what flows:
+Then add types. A schema is a name for what flows:
 
 ```python
 # schemas.py
@@ -37,14 +37,14 @@ class UsersDf(Schema): ...
 # preprocess.py
 from schemas import UsersDf
 
-UsersDf.riv_out(df, "users.pkl")
+riv_out[UsersDf](df, "users.pkl")
 ```
 
 ```python
 # train.py
 from schemas import UsersDf
 
-df = UsersDf.riv_in("users.pkl")
+df = riv_in[UsersDf]("users.pkl")
 ```
 
 Both sides now name the contract. Read the wrong schema and `riv check`
@@ -52,19 +52,19 @@ shows both sides:
 
 ```text
 error[schema-mismatch]: `users.pkl` is consumed as `schemas.OrdersDf` but was produced as `schemas.UsersDf`
-  --> train.py:3:10
+  --> train.py:4:17
    |
- 3 | orders = OrdersDf.riv_in("users.pkl")
-   |          ^^^^^^^^ consumed as `schemas.OrdersDf`
+ 4 | orders = riv_in[OrdersDf]("users.pkl")
+   |                 ^^^^^^^^ consumed as `schemas.OrdersDf`
    |
-  ::: preprocess.py:4:1
+  ::: preprocess.py:5:9
    |
- 4 | UsersDf.riv_out(users, "users.pkl")
-   | ------- produced as `schemas.UsersDf`
+ 5 | riv_out[UsersDf](users, "users.pkl")
+   |         ------- produced as `schemas.UsersDf`
 ```
 
 Schemas are erased at runtime; storage does not change.
 
 Type one edge at a time. Untyped calls warn, they never fail the check.
-When the river is fully typed, set `strict: true` in the YAML to keep it
-that way.
+The explicit opt-out is `riv_out[Untyped]`, legal even under
+`strict: true`, which turns the remaining warnings into errors.

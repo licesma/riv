@@ -8,4 +8,4 @@ error[unannotated-io]: artifact `users.pkl` is produced without a schema; the ch
  4 | riv_out(users, "users.pkl")
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ bare `riv_out()`
    |
-   = help: attach a schema (`UsersDf.riv_out(df, path)`) or mark the decision with `Untyped.riv_out(...)`
+   = help: attach a schema (`riv_out[UsersDf](df, path)`) or mark the decision with `riv_out[Untyped](...)`

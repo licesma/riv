@@ -1,3 +1,4 @@
+from riv import riv_in
 from schemas import UsersDf
 
-users = UsersDf.riv_in("users.pkl")
+users = riv_in[UsersDf]("users.pkl")

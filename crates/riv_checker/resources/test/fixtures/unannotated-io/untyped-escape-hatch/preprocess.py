@@ -1,4 +1,4 @@
-from riv import Untyped
+from riv import Untyped, riv_out
 
 blob = {"raw": True}
-Untyped.riv_out(blob, "blob.pkl")
+riv_out[Untyped](blob, "blob.pkl")

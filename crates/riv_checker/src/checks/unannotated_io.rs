@@ -1,5 +1,5 @@
 //! `unannotated-io`: a bare `riv_in()`/`riv_out()` with no schema attached.
-//! Warn by default; `strict: true` promotes it to an error. `Untyped.riv_*`
+//! Warn by default; `strict: true` promotes it to an error. `riv_*[Untyped]`
 //! emits nothing — a decision, not a suppression.
 
 use crate::diagnostic::{CheckContext, Span};
@@ -22,8 +22,8 @@ pub(crate) fn check(steps: &[AnalyzedStep], ctx: &mut CheckContext) {
                 None => "this artifact".to_string(),
             };
             let (verb, example) = match call.direction {
-                Direction::In => ("consumed", "df = UsersDf.riv_in(path)"),
-                Direction::Out => ("produced", "UsersDf.riv_out(df, path)"),
+                Direction::In => ("consumed", "df = riv_in[UsersDf](path)"),
+                Direction::Out => ("produced", "riv_out[UsersDf](df, path)"),
             };
             builder
                 .message(format!(
@@ -34,7 +34,7 @@ pub(crate) fn check(steps: &[AnalyzedStep], ctx: &mut CheckContext) {
                     format!("bare `{}()`", call.direction.function_name()),
                 )
                 .help(format!(
-                    "attach a schema (`{example}`) or mark the decision with `Untyped.{}(...)`",
+                    "attach a schema (`{example}`) or mark the decision with `{}[Untyped](...)`",
                     call.direction.function_name()
                 ))
                 .emit();

@@ -29,11 +29,11 @@ def test_json_round_trip(tmp_path):
 
 def test_schema_calls_are_erased_at_runtime(tmp_path):
     path = tmp_path / "users.pkl"
-    UsersDf.riv_out([1, 2, 3], path)
-    assert UsersDf.riv_in(path) == [1, 2, 3]
+    riv_out[UsersDf]([1, 2, 3], path)
+    assert riv_in[UsersDf](path) == [1, 2, 3]
     # Any schema reads any artifact: schemas are contracts for `riv check`,
     # not runtime validators.
-    assert Untyped.riv_in(path) == [1, 2, 3]
+    assert riv_in[Untyped](path) == [1, 2, 3]
 
 
 def test_unknown_extension_is_a_clear_error(tmp_path):

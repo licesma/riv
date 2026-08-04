@@ -1,3 +1,3 @@
-from riv import Untyped
+from riv import Untyped, riv_in
 
-users = Untyped.riv_in("users.pkl")
+users = riv_in[Untyped]("users.pkl")

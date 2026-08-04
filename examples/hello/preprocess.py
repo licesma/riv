@@ -1,3 +1,4 @@
+from riv import riv_out
 from schemas import UsersDf
 
 users = [
@@ -6,5 +7,5 @@ users = [
     {"id": 3, "name": "margaret"},
 ]
 
-UsersDf.riv_out(users, "users.pkl")
+riv_out[UsersDf](users, "users.pkl")
 print(f"preprocess: wrote {len(users)} users")
