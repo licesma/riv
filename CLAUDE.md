@@ -12,21 +12,25 @@ communication between Esteban and coding agents only: the folder is
 gitignored and must NEVER be committed, pushed, or referenced from
 tracked files — not even in git history.
 
-- **`documentation/plan.md`** — WHAT riv is and WHY: vision, MVP,
-  pipeline/schema/checker semantics, CLI verbs, gradual typing, naming
-  decisions, long-term direction. Read it before any work that touches
-  product behavior or semantics.
+- **`documentation/plan.md`** — WHAT riv is and WHY: index of the six
+  `documentation/plan/*.md` docs (vision, adoption, pipelines, checking,
+  execution, tracing). Read the index first; open the specific `plan/*.md`
+  your task touches — each is self-contained by design.
 - **`documentation/STRUCTURE.md`** — HOW the repo is built: index of the four
   `documentation/structure/*.md` docs (workspace, packaging, diagnostics,
-  testing) plus the distilled rules and the v1 layout tree. Read
-  `STRUCTURE.md` first; open the specific `structure/*.md` only if your task
-  touches that area — each is self-contained and ~6k chars by design.
+  testing) plus the distilled rules and the v1 layout tree. Same pattern:
+  index first, then the one doc your task touches.
 
 Routing by task:
 
 | Task touches… | Read |
 |---|---|
-| check semantics, rules, schemas, CLI behavior | `documentation/plan.md` |
+| vision, philosophy, long-term direction | `documentation/plan/vision.md` |
+| MVP path, runtime API, schemas, formats | `documentation/plan/adoption.md` |
+| pipeline YAML, steps, scripts vs functions | `documentation/plan/pipelines.md` |
+| check semantics, gradual typing, strictness | `documentation/plan/checking.md` |
+| CLI verbs, run, environments, uv, callables | `documentation/plan/execution.md` |
+| impact analysis, blast radius, provenance | `documentation/plan/tracing.md` |
 | creating/moving crates, deps, Cargo.toml | `documentation/structure/workspace.md` |
 | pyproject, wheel, python/riv layout, versions | `documentation/structure/packaging.md` |
 | diagnostic types, rule names, severity, output | `documentation/structure/diagnostics.md` |
@@ -46,5 +50,5 @@ no mention of Claude or AI anywhere in commit messages or PR bodies.
 - Untyped riv is valid riv: never turn the unannotated path into an error by
   default; `Untyped` is a legal decision, not a suppression.
 - Docs are law: a structural change updates the matching
-  `documentation/structure/*.md` (or `documentation/plan.md` for semantics) in the
-  same change, or doesn't happen.
+  `documentation/structure/*.md` (or `documentation/plan/*.md` for semantics)
+  in the same change, or doesn't happen.
