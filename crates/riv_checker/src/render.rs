@@ -157,7 +157,11 @@ fn render_annotation(
         let _ = writeln!(out, "{:gutter$}{arrow} {file}", "");
         return;
     };
-    let _ = writeln!(out, "{:gutter$}{arrow} {file}:{}:{}", "", pos.line, pos.column);
+    let _ = writeln!(
+        out,
+        "{:gutter$}{arrow} {file}:{}:{}",
+        "", pos.line, pos.column
+    );
     let _ = writeln!(out, "{:gutter$} |", "");
     let _ = writeln!(out, "{:>gutter$} | {}", pos.line, pos.line_text);
     let marker = if annotation.is_primary { '^' } else { '-' };

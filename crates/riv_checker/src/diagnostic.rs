@@ -165,7 +165,9 @@ impl DiagnosticBuilder<'_> {
 
     #[must_use]
     pub fn primary(mut self, span: Span, label: impl Into<String>) -> Self {
-        self.diagnostic.annotations.push(Annotation::primary(span, label));
+        self.diagnostic
+            .annotations
+            .push(Annotation::primary(span, label));
         self
     }
 

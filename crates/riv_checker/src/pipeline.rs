@@ -53,9 +53,12 @@ impl PipelineFile {
             }),
             Err(err) => {
                 if let Some(b) = ctx.report(&rules::INVALID_PIPELINE, false) {
-                    b.message(format!("`{}` is not a valid pipeline: {err}", path.display()))
-                        .primary(Span::file_only(path), "invalid pipeline file")
-                        .emit();
+                    b.message(format!(
+                        "`{}` is not a valid pipeline: {err}",
+                        path.display()
+                    ))
+                    .primary(Span::file_only(path), "invalid pipeline file")
+                    .emit();
                 }
                 None
             }

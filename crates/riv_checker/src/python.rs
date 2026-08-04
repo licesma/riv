@@ -156,8 +156,10 @@ impl ScanVisitor {
                     self.bind_riv_member(name, bound_as);
                 }
             } else if name != "*" {
-                self.bindings
-                    .insert(bound_as.to_string(), Binding::Imported(format!("{module}.{name}")));
+                self.bindings.insert(
+                    bound_as.to_string(),
+                    Binding::Imported(format!("{module}.{name}")),
+                );
             }
         }
     }
@@ -169,7 +171,8 @@ impl ScanVisitor {
                     .asname
                     .as_ref()
                     .map_or("riv", ruff_python_ast::Identifier::as_str);
-                self.bindings.insert(bound_as.to_string(), Binding::RivModule);
+                self.bindings
+                    .insert(bound_as.to_string(), Binding::RivModule);
             }
         }
     }
@@ -259,10 +262,14 @@ impl ScanVisitor {
             Direction::In => 0,
             Direction::Out => 1,
         };
-        let path = call.arguments.args.get(path_index).and_then(|arg| match arg {
-            Expr::StringLiteral(lit) => Some(lit.value.to_str().to_string()),
-            _ => None,
-        });
+        let path = call
+            .arguments
+            .args
+            .get(path_index)
+            .and_then(|arg| match arg {
+                Expr::StringLiteral(lit) => Some(lit.value.to_str().to_string()),
+                _ => None,
+            });
 
         self.calls.push(IoCall {
             direction,

@@ -51,7 +51,10 @@ fn typed_project(test: &CliTest) {
         "pipeline.yaml",
         "name: demo\nsteps:\n  - preprocess.py\n  - train.py\n",
     );
-    test.write("schemas.py", "from riv import Schema\n\n\nclass UsersDf(Schema): ...\n");
+    test.write(
+        "schemas.py",
+        "from riv import Schema\n\n\nclass UsersDf(Schema): ...\n",
+    );
     test.write(
         "preprocess.py",
         "from schemas import UsersDf\n\nusers = [1, 2, 3]\nUsersDf.riv_out(users, \"users.pkl\")\nprint(\"step: preprocess\")\n",
@@ -80,7 +83,10 @@ fn check_clean_project() {
 fn check_warns_on_unannotated_io() {
     let test = CliTest::new();
     test.write("pipeline.yaml", "name: demo\nsteps:\n  - produce.py\n");
-    test.write("produce.py", "from riv import riv_out\n\nriv_out([1], \"users.pkl\")\n");
+    test.write(
+        "produce.py",
+        "from riv import riv_out\n\nriv_out([1], \"users.pkl\")\n",
+    );
     assert_cmd_snapshot!(test.command().arg("check"), @r#"
     success: true
     exit_code: 0
@@ -106,7 +112,10 @@ fn strict_promotes_unannotated_io_to_error() {
         "pipeline.yaml",
         "name: demo\nstrict: true\nsteps:\n  - produce.py\n",
     );
-    test.write("produce.py", "from riv import riv_out\n\nriv_out([1], \"users.pkl\")\n");
+    test.write(
+        "produce.py",
+        "from riv import riv_out\n\nriv_out([1], \"users.pkl\")\n",
+    );
     assert_cmd_snapshot!(test.command().arg("check"), @r#"
     success: false
     exit_code: 1
@@ -129,7 +138,10 @@ fn strict_promotes_unannotated_io_to_error() {
 fn concise_output_format() {
     let test = CliTest::new();
     test.write("pipeline.yaml", "name: demo\nsteps:\n  - produce.py\n");
-    test.write("produce.py", "from riv import riv_out\n\nriv_out([1], \"users.pkl\")\n");
+    test.write(
+        "produce.py",
+        "from riv import riv_out\n\nriv_out([1], \"users.pkl\")\n",
+    );
     assert_cmd_snapshot!(
         test.command().args(["check", "--output-format", "concise"]),
         @r"
@@ -216,7 +228,10 @@ fn run_no_check_is_the_escape_hatch() {
         "step.py",
         "from riv import Untyped\nimport pathlib\n\nUntyped.riv_out([1], \"blob.pkl\")\nprint(\"unchecked step ran\")\n",
     );
-    test.write("pipeline.yaml", "name: demo\nsteps:\n  - step.py\n  - ghost.py\n");
+    test.write(
+        "pipeline.yaml",
+        "name: demo\nsteps:\n  - step.py\n  - ghost.py\n",
+    );
     assert_cmd_snapshot!(test.command().args(["pipeline.yaml", "run", "--no-check"]), @r"
     success: true
     exit_code: 0
@@ -231,7 +246,10 @@ fn run_no_check_is_the_escape_hatch() {
 #[test]
 fn run_propagates_step_failure() {
     let test = CliTest::new();
-    test.write("pipeline.yaml", "name: demo\nsteps:\n  - fail.py\n  - never.py\n");
+    test.write(
+        "pipeline.yaml",
+        "name: demo\nsteps:\n  - fail.py\n  - never.py\n",
+    );
     test.write("fail.py", "import sys\n\nprint(\"failing\")\nsys.exit(3)\n");
     test.write("never.py", "print(\"must not run\")\n");
     assert_cmd_snapshot!(test.command().args(["pipeline.yaml", "run"]), @r"
@@ -300,5 +318,9 @@ fn examples_check_clean_and_run() {
         );
         checked += 1;
     }
-    assert!(checked > 0, "no examples found in {}", examples_dir.display());
+    assert!(
+        checked > 0,
+        "no examples found in {}",
+        examples_dir.display()
+    );
 }
