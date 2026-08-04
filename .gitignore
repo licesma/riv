@@ -9,3 +9,4 @@ __pycache__/
 
 # Local agent docs — never push to GitHub
 /dev_docs/
+/documentation/.obsidian/

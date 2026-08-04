@@ -39,7 +39,7 @@ riv river.yaml
 ```
 
 Each step runs in order, as a plain subprocess. Your scripts did not
-change. More in [running pipelines](running-pipelines.md).
+change.
 
 You got the idea, more scripts, more steps:
 
@@ -53,3 +53,5 @@ steps:
 ```
 
 That's your first river.
+
+Next: [a typed river](typed-river.md).

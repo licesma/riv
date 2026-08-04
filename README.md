@@ -10,17 +10,38 @@ and untyped riv is valid riv, forever.
 pip install riv
 ```
 
+## Sneak peek
+
+A pipeline (a **river**) is one YAML file. Steps run in the order listed; a
+step is a Python script or another pipeline:
+
+```yaml
+# pipeline.yaml
+name: full
+
+steps:
+  - preprocess.yaml
+  - train.py
+```
+
+```yaml
+# preprocess.yaml
+name: preprocess
+
+steps:
+  - download.py
+  - strip.py
+```
+
+```bash
+riv check                # validate every pipeline under the current directory
+riv pipeline.yaml check  # validate one pipeline
+riv pipeline.yaml        # execute one pipeline
+```
+
 ## Get started
 
 | | |
 |---|---|
 | [Your first river](https://github.com/licesma/riv/blob/main/documentation/your-first-river.md) | glue your Python scripts with a pipeline |
-| [Running pipelines](https://github.com/licesma/riv/blob/main/documentation/running-pipelines.md) | `check`, run, and what execution does |
-
-Or try the shipped example:
-
-```bash
-cd examples/hello
-riv check
-riv pipeline.yaml
-```
+| [A typed river](https://github.com/licesma/riv/blob/main/documentation/typed-river.md) | schemas make the wiring checkable |
