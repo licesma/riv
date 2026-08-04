@@ -12,6 +12,10 @@ license = { text = "MIT" }
 # no dependencies key -> runtime is stdlib-only; pandas/pyarrow are the USER's
 # deps, imported lazily inside format plugins with a clear error if absent
 
+[tool.pytest.ini_options]
+testpaths = ["python/tests"]
+pythonpath = ["python"]
+
 [tool.maturin]
 bindings = "bin"
 manifest-path = "crates/riv/Cargo.toml"
