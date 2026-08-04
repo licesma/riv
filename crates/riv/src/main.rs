@@ -4,7 +4,8 @@
 //! ```text
 //! riv check              # validate all pipelines under the current directory
 //! riv <pipeline> check   # validate one pipeline
-//! riv <pipeline> run     # execute one pipeline (implies check; --no-check)
+//! riv <pipeline>         # execute one pipeline (implies check; --no-check)
+//! riv <pipeline> run     # same, explicit form
 //! ```
 
 use std::io::Write;
@@ -21,7 +22,7 @@ use riv_checker::{CheckResult, check_all, check_pipeline, resolve_run_steps};
     name = "riv",
     version,
     about = "Typed data pipelines for Python",
-    after_help = "Run a single pipeline with `riv <pipeline.yaml> check` or `riv <pipeline.yaml> run`."
+    after_help = "`riv <pipeline.yaml>` runs one pipeline; `riv <pipeline.yaml> check` validates it."
 )]
 struct Cli {
     #[command(subcommand)]
@@ -36,7 +37,7 @@ enum Command {
         #[arg(long, default_value = "full")]
         output_format: String,
     },
-    /// `riv <pipeline.yaml> <check|run>`.
+    /// `riv <pipeline.yaml> [check|run]` (bare form runs).
     #[command(external_subcommand)]
     Pipeline(Vec<String>),
 }
@@ -46,8 +47,12 @@ enum Command {
 #[derive(Parser)]
 #[command(name = "riv <pipeline.yaml>", disable_version_flag = true)]
 struct PipelineCli {
+    /// Skip the pre-run check (escape hatch).
+    #[arg(long)]
+    no_check: bool,
+    /// Defaults to `run` when omitted.
     #[command(subcommand)]
-    verb: Verb,
+    verb: Option<Verb>,
 }
 
 #[derive(Subcommand)]
@@ -105,13 +110,14 @@ fn pipeline_command(args: &[String]) -> ExitCode {
         }
     };
     match parsed.verb {
-        Verb::Check { output_format } => {
+        Some(Verb::Check { output_format }) => {
             let Some(format) = parse_format(&output_format) else {
                 return ExitCode::from(2);
             };
             report(&check_pipeline(&pipeline), format)
         }
-        Verb::Run { no_check } => run(&pipeline, no_check),
+        Some(Verb::Run { no_check }) => run(&pipeline, no_check || parsed.no_check),
+        None => run(&pipeline, parsed.no_check),
     }
 }
 

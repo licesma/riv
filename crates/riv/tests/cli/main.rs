@@ -187,6 +187,23 @@ fn run_executes_steps_in_order() {
 }
 
 #[test]
+fn bare_pipeline_runs() {
+    let test = CliTest::new();
+    typed_project(&test);
+    assert_cmd_snapshot!(test.command().arg("pipeline.yaml"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    step: preprocess
+    step: train (3 users)
+
+    ----- stderr -----
+    [1/2] preprocess.py
+    [2/2] train.py
+    ");
+}
+
+#[test]
 fn run_refuses_pipeline_that_does_not_check() {
     let test = CliTest::new();
     test.write("pipeline.yaml", "name: demo\nsteps:\n  - train.py\n");

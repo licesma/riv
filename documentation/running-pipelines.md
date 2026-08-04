@@ -1,7 +1,8 @@
 # Running pipelines
 
-A pipeline is one YAML file. Steps run in the order listed; a step is
-either a Python script or another pipeline YAML:
+A pipeline (a **river**, in riv-speak) is one YAML file. Steps run in
+the order listed; a step is either a Python script or another pipeline
+YAML:
 
 ```yaml
 # pipeline.yaml
@@ -13,7 +14,7 @@ steps:
 ```
 
 ```yaml
-# all.yaml — pipelines compose recursively
+# all.yaml: pipelines compose recursively
 name: all
 
 steps:
@@ -24,14 +25,14 @@ steps:
 ## Commands
 
 ```bash
-riv check              # validate every pipeline under the current directory
+riv check                # validate every pipeline under the current directory
 riv pipeline.yaml check  # validate one pipeline
-riv pipeline.yaml run    # execute one pipeline
+riv pipeline.yaml        # execute one pipeline
 ```
 
-`run` implies `check`: a pipeline that doesn't type-check refuses to
+Running implies checking: a pipeline that doesn't type-check refuses to
 start, so a schema mismatch is caught before step 1 runs instead of
-crashing step 4. The escape hatch is `riv pipeline.yaml run --no-check`.
+crashing step 4. The escape hatch is `riv pipeline.yaml --no-check`.
 
 ## What execution means
 
@@ -39,7 +40,7 @@ Each `.py` step runs as a plain subprocess, one after another; a step
 that exits non-zero stops the pipeline and `riv run` propagates its exit
 code. A `.yaml` step runs that pipeline's steps in place.
 
-Steps run in your ambient environment — riv does no environment
+Steps run in your ambient environment; riv does no environment
 management:
 
 - **Interpreter**: `$RIV_PYTHON` if set, else `python3`, else `python`.
@@ -49,7 +50,7 @@ management:
   the YAML that wired them.
 
 The only requirement is that `riv` is importable by the interpreter your
-steps run under (it's `pip install riv` — the runtime has zero
+steps run under (it's `pip install riv`; the runtime has zero
 dependencies).
 
 ## Try it
@@ -62,4 +63,4 @@ riv check
 riv pipeline.yaml run
 ```
 
-New to riv? Start with [zero-cost adoption](zero-cost-adoption.md).
+New to riv? Start with [your first river](your-first-river.md).
