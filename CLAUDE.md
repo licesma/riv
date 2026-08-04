@@ -7,17 +7,21 @@ checking is gradual, untyped riv is valid riv forever.
 
 ## Where context lives — read before working
 
-Design and alignment docs live in **`documentation/`**. They are for
+Design and alignment docs live in **`dev_docs/`**. They are for
 communication between Esteban and coding agents only: the folder is
 gitignored and must NEVER be committed, pushed, or referenced from
 tracked files — not even in git history.
 
-- **`documentation/plan.md`** — WHAT riv is and WHY: index of the six
-  `documentation/plan/*.md` docs (vision, adoption, pipelines, checking,
+Not to be confused with **`documentation/`**, which is tracked,
+user-facing documentation linked from the README. It must never
+reference `dev_docs/`.
+
+- **`dev_docs/plan.md`** — WHAT riv is and WHY: index of the six
+  `dev_docs/plan/*.md` docs (vision, adoption, pipelines, checking,
   execution, tracing). Read the index first; open the specific `plan/*.md`
   your task touches — each is self-contained by design.
-- **`documentation/STRUCTURE.md`** — HOW the repo is built: index of the four
-  `documentation/structure/*.md` docs (workspace, packaging, diagnostics,
+- **`dev_docs/STRUCTURE.md`** — HOW the repo is built: index of the four
+  `dev_docs/structure/*.md` docs (workspace, packaging, diagnostics,
   testing) plus the distilled rules and the v1 layout tree. Same pattern:
   index first, then the one doc your task touches.
 
@@ -25,16 +29,16 @@ Routing by task:
 
 | Task touches… | Read |
 |---|---|
-| vision, philosophy, long-term direction | `documentation/plan/vision.md` |
-| MVP path, runtime API, schemas, formats | `documentation/plan/adoption.md` |
-| pipeline YAML, steps, scripts vs functions | `documentation/plan/pipelines.md` |
-| check semantics, gradual typing, strictness | `documentation/plan/checking.md` |
-| CLI verbs, run, environments, uv, callables | `documentation/plan/execution.md` |
-| impact analysis, blast radius, provenance | `documentation/plan/tracing.md` |
-| creating/moving crates, deps, Cargo.toml | `documentation/structure/workspace.md` |
-| pyproject, wheel, python/riv layout, versions | `documentation/structure/packaging.md` |
-| diagnostic types, rule names, severity, output | `documentation/structure/diagnostics.md` |
-| tests, fixtures, snapshots, examples/ | `documentation/structure/testing.md` |
+| vision, philosophy, long-term direction | `dev_docs/plan/vision.md` |
+| MVP path, runtime API, schemas, formats | `dev_docs/plan/adoption.md` |
+| pipeline YAML, steps, scripts vs functions | `dev_docs/plan/pipelines.md` |
+| check semantics, gradual typing, strictness | `dev_docs/plan/checking.md` |
+| CLI verbs, run, environments, uv, callables | `dev_docs/plan/execution.md` |
+| impact analysis, blast radius, provenance | `dev_docs/plan/tracing.md` |
+| creating/moving crates, deps, Cargo.toml | `dev_docs/structure/workspace.md` |
+| pyproject, wheel, python/riv layout, versions | `dev_docs/structure/packaging.md` |
+| diagnostic types, rule names, severity, output | `dev_docs/structure/diagnostics.md` |
+| tests, fixtures, snapshots, examples/ | `dev_docs/structure/testing.md` |
 
 ## Commits
 
@@ -50,5 +54,5 @@ no mention of Claude or AI anywhere in commit messages or PR bodies.
 - Untyped riv is valid riv: never turn the unannotated path into an error by
   default; `Untyped` is a legal decision, not a suppression.
 - Docs are law: a structural change updates the matching
-  `documentation/structure/*.md` (or `documentation/plan/*.md` for semantics)
+  `dev_docs/structure/*.md` (or `dev_docs/plan/*.md` for semantics)
   in the same change, or doesn't happen.

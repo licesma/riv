@@ -14,7 +14,8 @@ pip install riv
 ```
 
 Replace your pickle round-trips with the untyped form (works immediately,
-warns under `riv check`):
+warns under `riv check` — the full walkthrough is
+[zero-cost adoption](https://github.com/licesma/riv/blob/main/documentation/zero-cost-adoption.md)):
 
 ```python
 from riv import riv_in, riv_out
@@ -82,6 +83,14 @@ error[schema-mismatch]: `users.pkl` is consumed as `schemas.OrdersDf` but was pr
 - `strict: true` in the pipeline YAML promotes unannotated IO to an error.
 - `Untyped.riv_out(blob, path)` is the explicit escape hatch — legal even
   under strict. `grep Untyped` is your tech-debt list.
+
+## Documentation
+
+- [Zero-cost adoption](https://github.com/licesma/riv/blob/main/documentation/zero-cost-adoption.md) —
+  let riv be the glue between the scripts you already have: untyped first,
+  typed whenever you feel like it.
+- [Running pipelines](https://github.com/licesma/riv/blob/main/documentation/running-pipelines.md) —
+  the pipeline YAML, `check` and `run`, and what execution actually does.
 
 ## Try the example
 

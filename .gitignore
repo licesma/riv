@@ -8,4 +8,4 @@ __pycache__/
 *.pending-snap
 
 # Local agent docs — never push to GitHub
-/documentation/
+/dev_docs/
