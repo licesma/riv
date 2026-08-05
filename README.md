@@ -38,6 +38,7 @@ steps:
 riv check              # validate every river under the current directory
 riv river.yaml check   # validate one river
 riv river.yaml         # execute one river
+riv train              # execute train/river.yaml
 ```
 
 ## Get started

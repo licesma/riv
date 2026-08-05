@@ -204,6 +204,69 @@ fn bare_river_runs() {
 }
 
 #[test]
+fn dot_runs_the_current_directory_river() {
+    let test = CliTest::new();
+    typed_project(&test);
+    assert_cmd_snapshot!(test.command().arg("."), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    step: preprocess
+    step: train (3 users)
+
+    ----- stderr -----
+    [1/2] preprocess.py
+    [2/2] train.py
+    ");
+}
+
+#[test]
+fn directory_resolves_to_its_river_yaml() {
+    let test = CliTest::new();
+    test.write("train/river.yaml", "name: train\nsteps:\n  - step.py\n");
+    test.write("train/step.py", "print(\"step ran\")\n");
+    assert_cmd_snapshot!(test.command().arg("train"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    step ran
+
+    ----- stderr -----
+    [1/1] train/step.py
+    ");
+}
+
+#[test]
+fn directory_check_verb() {
+    let test = CliTest::new();
+    test.write("train/river.yaml", "name: train\nsteps:\n  - step.py\n");
+    test.write("train/step.py", "print(\"step ran\")\n");
+    assert_cmd_snapshot!(test.command().args(["train", "check"]), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Checked 1 river: 0 errors, 0 warnings.
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn directory_without_river_yaml_lists_candidates() {
+    let test = CliTest::new();
+    test.write("train/full.yaml", "name: full\nsteps:\n  - step.py\n");
+    test.write("train/nightly.yaml", "name: nightly\nsteps:\n  - step.py\n");
+    assert_cmd_snapshot!(test.command().arg("train"), @r"
+    success: false
+    exit_code: 2
+    ----- stdout -----
+
+    ----- stderr -----
+    error: no river.yaml in `train`; found: full.yaml, nightly.yaml
+    ");
+}
+
+#[test]
 fn run_refuses_river_that_does_not_check() {
     let test = CliTest::new();
     test.write("river.yaml", "name: demo\nsteps:\n  - train.py\n");
@@ -284,13 +347,13 @@ fn run_propagates_step_failure() {
 #[test]
 fn unknown_subcommand_is_a_usage_error() {
     let test = CliTest::new();
-    assert_cmd_snapshot!(test.command().arg("frobnicate"), @r"
+    assert_cmd_snapshot!(test.command().arg("frobnicate"), @"
     success: false
     exit_code: 2
     ----- stdout -----
 
     ----- stderr -----
-    error: unrecognized subcommand or river `frobnicate`
+    error: unrecognized subcommand, river, or directory `frobnicate`
 
     Usage: riv <COMMAND>
 

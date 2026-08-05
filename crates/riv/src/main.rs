@@ -7,6 +7,9 @@
 //! riv <river>         # execute one river (implies check; --no-check)
 //! riv <river> run     # same, explicit form
 //! ```
+//!
+//! `<river>` is a YAML path or a directory; a directory means its
+//! `river.yaml`. Verbs win: a directory named `check` needs `riv check/`.
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -22,7 +25,7 @@ use riv_checker::{CheckResult, check_all, check_river, resolve_run_steps};
     name = "riv",
     version,
     about = "Typed data rivers for Python",
-    after_help = "`riv <river.yaml>` runs one river; `riv <river.yaml> check` validates it."
+    after_help = "`riv <river.yaml>` runs one river; `riv <dir>` runs the directory's river.yaml; `riv <river> check` validates it."
 )]
 struct Cli {
     #[command(subcommand)]
@@ -84,22 +87,10 @@ fn main() -> ExitCode {
 }
 
 fn river_command(args: &[String]) -> ExitCode {
-    let river = PathBuf::from(&args[0]);
-    if !matches!(
-        river.extension().and_then(|e| e.to_str()),
-        Some("yaml" | "yml")
-    ) {
-        let mut cmd = <Cli as clap::CommandFactory>::command();
-        eprintln!(
-            "{}",
-            cmd.error(
-                clap::error::ErrorKind::InvalidSubcommand,
-                format!("unrecognized subcommand or river `{}`", args[0]),
-            )
-            .render()
-        );
-        return ExitCode::from(2);
-    }
+    let river = match resolve_river(&args[0]) {
+        Ok(river) => river,
+        Err(exit) => return exit,
+    };
     let parsed = match RiverCli::try_parse_from(
         std::iter::once("riv <river.yaml>".to_string()).chain(args[1..].iter().cloned()),
     ) {
@@ -119,6 +110,59 @@ fn river_command(args: &[String]) -> ExitCode {
         Some(Verb::Run { no_check }) => run(&river, no_check || parsed.no_check),
         None => run(&river, parsed.no_check),
     }
+}
+
+/// Resolve the river argument: a YAML path is a river; a directory means
+/// its `river.yaml`.
+fn resolve_river(arg: &str) -> Result<PathBuf, ExitCode> {
+    let path = PathBuf::from(arg);
+    if matches!(
+        path.extension().and_then(|e| e.to_str()),
+        Some("yaml" | "yml")
+    ) {
+        return Ok(path);
+    }
+    if path.is_dir() {
+        let entry = path.join("river.yaml");
+        if entry.is_file() {
+            return Ok(entry);
+        }
+        let mut found: Vec<String> = std::fs::read_dir(&path)
+            .map(|entries| {
+                entries
+                    .flatten()
+                    .filter_map(|e| {
+                        let name = e.file_name().to_string_lossy().into_owned();
+                        matches!(
+                            Path::new(&name).extension().and_then(|x| x.to_str()),
+                            Some("yaml" | "yml")
+                        )
+                        .then_some(name)
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        found.sort();
+        if found.is_empty() {
+            eprintln!("error: no river.yaml in `{arg}`");
+        } else {
+            eprintln!(
+                "error: no river.yaml in `{arg}`; found: {}",
+                found.join(", ")
+            );
+        }
+        return Err(ExitCode::from(2));
+    }
+    let mut cmd = <Cli as clap::CommandFactory>::command();
+    eprintln!(
+        "{}",
+        cmd.error(
+            clap::error::ErrorKind::InvalidSubcommand,
+            format!("unrecognized subcommand, river, or directory `{arg}`"),
+        )
+        .render()
+    );
+    Err(ExitCode::from(2))
 }
 
 fn parse_format(raw: &str) -> Option<OutputFormat> {
