@@ -3,7 +3,7 @@ source: crates/riv_checker/src/checks/mod.rs
 expression: "check_fixture(\"missing-step/basic\")"
 ---
 error[missing-step]: step `resources/test/fixtures/missing-step/basic/ghost.py` does not exist
-  --> resources/test/fixtures/missing-step/basic/pipeline.yaml:4:5
+  --> resources/test/fixtures/missing-step/basic/river.yaml:4:5
    |
  4 |   - ghost.py
    |     ^^^^^^^^ listed here

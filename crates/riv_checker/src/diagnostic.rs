@@ -42,7 +42,7 @@ impl Span {
 /// One source pointer. Exactly one annotation per diagnostic is primary;
 /// secondaries add context — riv's flagship UX is the cross-file secondary
 /// (primary at the consuming `riv_in`, secondary at the producing `riv_out`
-/// or the pipeline YAML step).
+/// or the river YAML step).
 #[derive(Debug, Clone)]
 pub struct Annotation {
     pub span: Span,
@@ -100,7 +100,7 @@ impl Diagnostic {
 }
 
 /// Collects diagnostics during a check run and applies the severity ratchet.
-/// Checks are plain functions over the resolved pipeline that call
+/// Checks are plain functions over the resolved river that call
 /// [`CheckContext::report`]; `None` means the rule is ignored at this site.
 #[derive(Debug, Default)]
 pub struct CheckContext {

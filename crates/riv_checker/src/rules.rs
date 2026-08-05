@@ -4,7 +4,7 @@
 use std::fmt;
 
 /// The level a rule reports at. Severity is the gradual-typing ratchet:
-/// `strict: true` in a pipeline promotes `unannotated-io` from Warn to Error.
+/// `strict: true` in a river promotes `unannotated-io` from Warn to Error.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Level {
     Ignore,
@@ -80,16 +80,16 @@ declare_rule! {
 }
 
 declare_rule! {
-    /// A pipeline includes itself, directly or through other pipelines.
+    /// A river includes itself, directly or through other rivers.
     pub static CYCLE = {
         name: "cycle",
-        summary: "detects pipelines that include themselves",
+        summary: "detects rivers that include themselves",
         default_level: Level::Error,
     }
 }
 
 declare_rule! {
-    /// A step listed in a pipeline does not exist on disk.
+    /// A step listed in a river does not exist on disk.
     pub static MISSING_STEP = {
         name: "missing-step",
         summary: "detects steps whose file does not exist",
@@ -98,11 +98,11 @@ declare_rule! {
 }
 
 declare_rule! {
-    /// A pipeline YAML that cannot be read as a pipeline (bad shape, bad step
+    /// A river YAML that cannot be read as a river (bad shape, bad step
     /// kind). Untyped riv is valid riv; unreadable riv is not.
-    pub static INVALID_PIPELINE = {
-        name: "invalid-pipeline",
-        summary: "detects malformed pipeline files",
+    pub static INVALID_RIVER = {
+        name: "invalid-river",
+        summary: "detects malformed river files",
         default_level: Level::Error,
     }
 }
@@ -123,6 +123,6 @@ pub static REGISTRY: &[&Rule] = &[
     &SCHEMA_MISMATCH,
     &CYCLE,
     &MISSING_STEP,
-    &INVALID_PIPELINE,
+    &INVALID_RIVER,
     &INVALID_SYNTAX,
 ];

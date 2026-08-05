@@ -2,14 +2,14 @@
 source: crates/riv_checker/src/checks/mod.rs
 expression: "check_fixture(\"cycle/basic\")"
 ---
-error[cycle]: pipeline `resources/test/fixtures/cycle/basic/b.yaml` includes itself via `b.yaml`
+error[cycle]: river `resources/test/fixtures/cycle/basic/b.yaml` includes itself via `b.yaml`
   --> resources/test/fixtures/cycle/basic/a.yaml:3:5
    |
  3 |   - b.yaml
    |     ^^^^^^ this step closes the cycle
    |
 
-error[cycle]: pipeline `resources/test/fixtures/cycle/basic/a.yaml` includes itself via `a.yaml`
+error[cycle]: river `resources/test/fixtures/cycle/basic/a.yaml` includes itself via `a.yaml`
   --> resources/test/fixtures/cycle/basic/b.yaml:3:5
    |
  3 |   - a.yaml

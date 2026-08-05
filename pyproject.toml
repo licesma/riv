@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 name = "riv"
 version = "0.1.0"           # keep equal to crates/riv/Cargo.toml; bump both in one commit
-description = "Typed data pipelines for Python: static checker + tiny runtime."
+description = "Typed data rivers (pipelines) for Python: static checker + tiny runtime."
 requires-python = ">=3.9"
 readme = "README.md"
 license = { text = "MIT" }

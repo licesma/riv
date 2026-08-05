@@ -1,5 +1,5 @@
 //! Checks are modules, never crates. Each check is a plain function over the
-//! resolved, scanned pipeline that emits through the [`CheckContext`].
+//! resolved, scanned river that emits through the [`CheckContext`].
 
 mod consume_before_produce;
 mod schema_mismatch;
@@ -8,10 +8,10 @@ mod unannotated_io;
 use std::path::{Path, PathBuf};
 
 use crate::diagnostic::CheckContext;
-use crate::pipeline::{self, ResolvedStep};
 use crate::python::{self, ScannedFile};
+use crate::river::{self, ResolvedStep};
 
-/// A pipeline step joined with the scan of its Python source.
+/// A river step joined with the scan of its Python source.
 pub(crate) struct AnalyzedStep {
     pub(crate) step: ResolvedStep,
     pub(crate) file: ScannedFile,
@@ -19,16 +19,16 @@ pub(crate) struct AnalyzedStep {
 
 impl AnalyzedStep {
     /// The identity of an artifact named `path` inside this step: its
-    /// path-literal resolved against the pipeline directory the step runs in.
+    /// path-literal resolved against the river directory the step runs in.
     pub(crate) fn artifact_key(&self, path: &str) -> PathBuf {
-        pipeline::normalize(&self.step.dir.join(path))
+        river::normalize(&self.step.dir.join(path))
     }
 }
 
-/// Check one root pipeline: expand it (cycles, missing steps), scan every
+/// Check one root river: expand it (cycles, missing steps), scan every
 /// Python step (syntax), then run the artifact checks over the ordered steps.
 pub fn check_root(root_yaml: &Path, ctx: &mut CheckContext) {
-    let steps = pipeline::expand(root_yaml, ctx);
+    let steps = river::expand(root_yaml, ctx);
     let analyzed: Vec<AnalyzedStep> = steps
         .into_iter()
         .filter_map(|step| {
@@ -49,7 +49,7 @@ mod tests {
     use crate::render::{OutputFormat, render_to_string};
 
     /// Check a fixture project (a directory under `resources/test/fixtures`
-    /// containing at least one pipeline YAML) and render its diagnostics.
+    /// containing at least one river YAML) and render its diagnostics.
     fn check_fixture(fixture: &str) -> String {
         let root = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("resources/test/fixtures")
@@ -57,10 +57,10 @@ mod tests {
         let cwd = std::env::current_dir().unwrap();
         // Diagnostics carry paths as given; check relative to the fixture so
         // snapshots are machine-independent.
-        let pipelines = crate::pipeline::discover_pipelines(&root);
+        let rivers = crate::river::discover_rivers(&root);
         let mut ctx = CheckContext::new();
-        for pipeline in &pipelines {
-            let relative = pipeline.strip_prefix(&cwd).unwrap_or(pipeline);
+        for river in &rivers {
+            let relative = river.strip_prefix(&cwd).unwrap_or(river);
             super::check_root(relative, &mut ctx);
         }
         let mut diagnostics = ctx.into_diagnostics();
@@ -121,7 +121,7 @@ mod tests {
     }
 
     #[test]
-    fn clean_pipeline_has_no_diagnostics() {
+    fn clean_river_has_no_diagnostics() {
         assert_diagnostics!("clean/basic");
     }
 }

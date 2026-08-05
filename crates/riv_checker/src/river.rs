@@ -1,4 +1,4 @@
-//! Pipeline YAML model: loading, discovery, and recursive expansion into an
+//! River YAML model: loading, discovery, and recursive expansion into an
 //! ordered list of Python steps. Cycle and missing-step problems are found
 //! here during expansion and reported through the check context.
 
@@ -12,10 +12,10 @@ use serde::Deserialize;
 use crate::diagnostic::{CheckContext, Span};
 use crate::rules;
 
-/// One pipeline YAML document, as written.
+/// One river YAML document, as written.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct PipelineDoc {
+pub struct RiverDoc {
     #[serde(default)]
     pub name: Option<String>,
     #[serde(default)]
@@ -23,42 +23,39 @@ pub struct PipelineDoc {
     pub steps: Vec<String>,
 }
 
-/// A loaded pipeline file: the parsed document plus enough source context to
+/// A loaded river file: the parsed document plus enough source context to
 /// point diagnostics at individual step lines.
 #[derive(Debug, Clone)]
-pub struct PipelineFile {
+pub struct RiverFile {
     pub path: PathBuf,
     pub source: String,
-    pub doc: PipelineDoc,
+    pub doc: RiverDoc,
 }
 
-impl PipelineFile {
-    pub fn load(path: &Path, ctx: &mut CheckContext) -> Option<PipelineFile> {
+impl RiverFile {
+    pub fn load(path: &Path, ctx: &mut CheckContext) -> Option<RiverFile> {
         let source = match fs::read_to_string(path) {
             Ok(source) => source,
             Err(err) => {
-                if let Some(b) = ctx.report(&rules::INVALID_PIPELINE, false) {
+                if let Some(b) = ctx.report(&rules::INVALID_RIVER, false) {
                     b.message(format!("cannot read `{}`: {err}", path.display()))
-                        .primary(Span::file_only(path), "unreadable pipeline")
+                        .primary(Span::file_only(path), "unreadable river")
                         .emit();
                 }
                 return None;
             }
         };
-        match serde_yaml::from_str::<PipelineDoc>(&source) {
-            Ok(doc) => Some(PipelineFile {
+        match serde_yaml::from_str::<RiverDoc>(&source) {
+            Ok(doc) => Some(RiverFile {
                 path: path.to_path_buf(),
                 source,
                 doc,
             }),
             Err(err) => {
-                if let Some(b) = ctx.report(&rules::INVALID_PIPELINE, false) {
-                    b.message(format!(
-                        "`{}` is not a valid pipeline: {err}",
-                        path.display()
-                    ))
-                    .primary(Span::file_only(path), "invalid pipeline file")
-                    .emit();
+                if let Some(b) = ctx.report(&rules::INVALID_RIVER, false) {
+                    b.message(format!("`{}` is not a valid river: {err}", path.display()))
+                        .primary(Span::file_only(path), "invalid river file")
+                        .emit();
                 }
                 None
             }
@@ -86,16 +83,16 @@ impl PipelineFile {
 pub struct ResolvedStep {
     /// The `.py` file to run.
     pub script: PathBuf,
-    /// Directory of the pipeline YAML that listed this step; scripts run with
+    /// Directory of the river YAML that listed this step; scripts run with
     /// this as their working directory, and artifact paths resolve against it.
     pub dir: PathBuf,
     /// Effective strictness: OR of `strict:` along the inclusion chain.
     pub strict: bool,
 }
 
-/// Is this yaml file shaped like a pipeline (a mapping with a `steps` list)?
-/// Non-pipeline YAML (CI configs, etc.) is silently skipped by discovery.
-fn looks_like_pipeline(source: &str) -> bool {
+/// Is this yaml file shaped like a river (a mapping with a `steps` list)?
+/// Non-river YAML (CI configs, etc.) is silently skipped by discovery.
+fn looks_like_river(source: &str) -> bool {
     matches!(
         serde_yaml::from_str::<serde_yaml::Value>(source),
         Ok(serde_yaml::Value::Mapping(m)) if matches!(m.get("steps"), Some(serde_yaml::Value::Sequence(_)))
@@ -104,8 +101,8 @@ fn looks_like_pipeline(source: &str) -> bool {
 
 const SKIP_DIRS: &[&str] = &["target", "node_modules", "__pycache__", "venv"];
 
-/// Find every pipeline YAML under `root`, sorted for deterministic output.
-pub fn discover_pipelines(root: &Path) -> Vec<PathBuf> {
+/// Find every river YAML under `root`, sorted for deterministic output.
+pub fn discover_rivers(root: &Path) -> Vec<PathBuf> {
     let mut found = Vec::new();
     let mut stack = vec![root.to_path_buf()];
     while let Some(dir) = stack.pop() {
@@ -125,7 +122,7 @@ pub fn discover_pipelines(root: &Path) -> Vec<PathBuf> {
                 path.extension().and_then(|e| e.to_str()),
                 Some("yaml" | "yml")
             ) && let Ok(source) = fs::read_to_string(&path)
-                && looks_like_pipeline(&source)
+                && looks_like_river(&source)
             {
                 found.push(path);
             }
@@ -154,7 +151,7 @@ pub fn normalize(path: &Path) -> PathBuf {
     out
 }
 
-/// Recursively expand a root pipeline into ordered Python steps, reporting
+/// Recursively expand a root river into ordered Python steps, reporting
 /// cycles, missing steps, and unknown step kinds along the way.
 pub fn expand(root: &Path, ctx: &mut CheckContext) -> Vec<ResolvedStep> {
     let mut steps = Vec::new();
@@ -171,37 +168,37 @@ fn expand_into(
     ctx: &mut CheckContext,
 ) {
     let yaml_path = normalize(yaml_path);
-    let Some(pipeline) = PipelineFile::load(&yaml_path, ctx) else {
+    let Some(river) = RiverFile::load(&yaml_path, ctx) else {
         return;
     };
     in_progress.insert(yaml_path.clone());
     let dir = yaml_path.parent().unwrap_or(Path::new("")).to_path_buf();
-    let strict = inherited_strict || pipeline.doc.strict;
+    let strict = inherited_strict || river.doc.strict;
 
-    for step in &pipeline.doc.steps {
+    for step in &river.doc.steps {
         let step_path = normalize(&dir.join(step));
         match step_path.extension().and_then(|e| e.to_str()) {
             Some("yaml" | "yml") => {
                 if in_progress.contains(&step_path) {
                     if let Some(b) = ctx.report(&rules::CYCLE, strict) {
                         b.message(format!(
-                            "pipeline `{}` includes itself via `{step}`",
+                            "river `{}` includes itself via `{step}`",
                             step_path.display()
                         ))
-                        .primary(pipeline.step_span(step), "this step closes the cycle")
+                        .primary(river.step_span(step), "this step closes the cycle")
                         .emit();
                     }
                     continue;
                 }
                 if !step_path.is_file() {
-                    report_missing(&pipeline, step, &step_path, strict, ctx);
+                    report_missing(&river, step, &step_path, strict, ctx);
                     continue;
                 }
                 expand_into(&step_path, strict, in_progress, out, ctx);
             }
             Some("py") => {
                 if !step_path.is_file() {
-                    report_missing(&pipeline, step, &step_path, strict, ctx);
+                    report_missing(&river, step, &step_path, strict, ctx);
                     continue;
                 }
                 out.push(ResolvedStep {
@@ -211,12 +208,12 @@ fn expand_into(
                 });
             }
             _ => {
-                if let Some(b) = ctx.report(&rules::INVALID_PIPELINE, strict) {
+                if let Some(b) = ctx.report(&rules::INVALID_RIVER, strict) {
                     b.message(format!(
-                        "step `{step}` is not a `.py` script or a `.yaml` pipeline"
+                        "step `{step}` is not a `.py` script or a `.yaml` river"
                     ))
-                    .primary(pipeline.step_span(step), "unsupported step kind")
-                    .note("steps are scripts in v1: a Python file or another pipeline")
+                    .primary(river.step_span(step), "unsupported step kind")
+                    .note("steps are scripts in v1: a Python file or another river")
                     .emit();
                 }
             }
@@ -226,7 +223,7 @@ fn expand_into(
 }
 
 fn report_missing(
-    pipeline: &PipelineFile,
+    river: &RiverFile,
     step: &str,
     step_path: &Path,
     strict: bool,
@@ -234,7 +231,7 @@ fn report_missing(
 ) {
     if let Some(b) = ctx.report(&rules::MISSING_STEP, strict) {
         b.message(format!("step `{}` does not exist", step_path.display()))
-            .primary(pipeline.step_span(step), "listed here")
+            .primary(river.step_span(step), "listed here")
             .emit();
     }
 }

@@ -14,7 +14,7 @@ use crate::rules::CONSUME_BEFORE_PRODUCE;
 use super::AnalyzedStep;
 
 pub(crate) fn check(steps: &[AnalyzedStep], ctx: &mut CheckContext) {
-    // Every producer in the whole pipeline, so late producers can be named
+    // Every producer in the whole river, so late producers can be named
     // in the diagnostic.
     let mut all_producers: HashMap<PathBuf, &AnalyzedStep> = HashMap::new();
     for step in steps {
@@ -58,7 +58,7 @@ pub(crate) fn check(steps: &[AnalyzedStep], ctx: &mut CheckContext) {
                         ))
                     } else {
                         builder.note(
-                            "no step in this pipeline produces it, and it does not exist on disk",
+                            "no step in this river produces it, and it does not exist on disk",
                         )
                     };
                     builder.emit();

@@ -2,10 +2,10 @@
 //!
 //! Verbs:
 //! ```text
-//! riv check              # validate all pipelines under the current directory
-//! riv <pipeline> check   # validate one pipeline
-//! riv <pipeline>         # execute one pipeline (implies check; --no-check)
-//! riv <pipeline> run     # same, explicit form
+//! riv check              # validate all rivers under the current directory
+//! riv <river> check   # validate one river
+//! riv <river>         # execute one river (implies check; --no-check)
+//! riv <river> run     # same, explicit form
 //! ```
 
 use std::io::Write;
@@ -15,14 +15,14 @@ use std::process::ExitCode;
 use clap::{Parser, Subcommand};
 
 use riv_checker::render::{OutputFormat, render_to_string};
-use riv_checker::{CheckResult, check_all, check_pipeline, resolve_run_steps};
+use riv_checker::{CheckResult, check_all, check_river, resolve_run_steps};
 
 #[derive(Parser)]
 #[command(
     name = "riv",
     version,
-    about = "Typed data pipelines for Python",
-    after_help = "`riv <pipeline.yaml>` runs one pipeline; `riv <pipeline.yaml> check` validates it."
+    about = "Typed data rivers for Python",
+    after_help = "`riv <river.yaml>` runs one river; `riv <river.yaml> check` validates it."
 )]
 struct Cli {
     #[command(subcommand)]
@@ -31,22 +31,22 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Validate all pipelines under the current directory.
+    /// Validate all rivers under the current directory.
     Check {
         /// Output format: full, concise, json, or github.
         #[arg(long, default_value = "full")]
         output_format: String,
     },
-    /// `riv <pipeline.yaml> [check|run]` (bare form runs).
+    /// `riv <river.yaml> [check|run]` (bare form runs).
     #[command(external_subcommand)]
-    Pipeline(Vec<String>),
+    River(Vec<String>),
 }
 
-/// Arguments after `riv <pipeline.yaml>`, parsed with clap for real
+/// Arguments after `riv <river.yaml>`, parsed with clap for real
 /// `--help`/error behavior.
 #[derive(Parser)]
-#[command(name = "riv <pipeline.yaml>", disable_version_flag = true)]
-struct PipelineCli {
+#[command(name = "riv <river.yaml>", disable_version_flag = true)]
+struct RiverCli {
     /// Skip the pre-run check (escape hatch).
     #[arg(long)]
     no_check: bool,
@@ -57,13 +57,13 @@ struct PipelineCli {
 
 #[derive(Subcommand)]
 enum Verb {
-    /// Validate this pipeline.
+    /// Validate this river.
     Check {
         /// Output format: full, concise, json, or github.
         #[arg(long, default_value = "full")]
         output_format: String,
     },
-    /// Execute this pipeline. Refuses to start unless it type-checks.
+    /// Execute this river. Refuses to start unless it type-checks.
     Run {
         /// Skip the pre-run check (escape hatch).
         #[arg(long)]
@@ -79,14 +79,14 @@ fn main() -> ExitCode {
             };
             report(&check_all(Path::new(".")), format)
         }
-        Command::Pipeline(args) => pipeline_command(&args),
+        Command::River(args) => river_command(&args),
     }
 }
 
-fn pipeline_command(args: &[String]) -> ExitCode {
-    let pipeline = PathBuf::from(&args[0]);
+fn river_command(args: &[String]) -> ExitCode {
+    let river = PathBuf::from(&args[0]);
     if !matches!(
-        pipeline.extension().and_then(|e| e.to_str()),
+        river.extension().and_then(|e| e.to_str()),
         Some("yaml" | "yml")
     ) {
         let mut cmd = <Cli as clap::CommandFactory>::command();
@@ -94,14 +94,14 @@ fn pipeline_command(args: &[String]) -> ExitCode {
             "{}",
             cmd.error(
                 clap::error::ErrorKind::InvalidSubcommand,
-                format!("unrecognized subcommand or pipeline `{}`", args[0]),
+                format!("unrecognized subcommand or river `{}`", args[0]),
             )
             .render()
         );
         return ExitCode::from(2);
     }
-    let parsed = match PipelineCli::try_parse_from(
-        std::iter::once("riv <pipeline.yaml>".to_string()).chain(args[1..].iter().cloned()),
+    let parsed = match RiverCli::try_parse_from(
+        std::iter::once("riv <river.yaml>".to_string()).chain(args[1..].iter().cloned()),
     ) {
         Ok(parsed) => parsed,
         Err(err) => {
@@ -114,10 +114,10 @@ fn pipeline_command(args: &[String]) -> ExitCode {
             let Some(format) = parse_format(&output_format) else {
                 return ExitCode::from(2);
             };
-            report(&check_pipeline(&pipeline), format)
+            report(&check_river(&river), format)
         }
-        Some(Verb::Run { no_check }) => run(&pipeline, no_check || parsed.no_check),
-        None => run(&pipeline, parsed.no_check),
+        Some(Verb::Run { no_check }) => run(&river, no_check || parsed.no_check),
+        None => run(&river, parsed.no_check),
     }
 }
 
@@ -137,11 +137,11 @@ fn report(result: &CheckResult, format: OutputFormat) -> ExitCode {
     let _ = write!(stdout, "{}", render_to_string(&result.diagnostics, format));
     let (errors, warnings) = (result.error_count(), result.warning_count());
     if matches!(format, OutputFormat::Full | OutputFormat::Concise) {
-        let pipelines = result.pipelines.len();
+        let rivers = result.rivers.len();
         let _ = writeln!(
             stdout,
-            "Checked {pipelines} pipeline{}: {errors} error{}, {warnings} warning{}.",
-            plural(pipelines),
+            "Checked {rivers} river{}: {errors} error{}, {warnings} warning{}.",
+            plural(rivers),
             plural(errors),
             plural(warnings),
         );
@@ -157,24 +157,24 @@ fn plural(n: usize) -> &'static str {
     if n == 1 { "" } else { "s" }
 }
 
-fn run(pipeline: &Path, no_check: bool) -> ExitCode {
+fn run(river: &Path, no_check: bool) -> ExitCode {
     if !no_check {
-        let result = check_pipeline(pipeline);
+        let result = check_river(river);
         if result.error_count() > 0 {
             let exit = report(&result, OutputFormat::Full);
             eprintln!(
                 "error: `{}` does not check; refusing to run (use --no-check to override)",
-                pipeline.display()
+                river.display()
             );
             return exit;
         }
     }
 
-    let steps = resolve_run_steps(pipeline);
+    let steps = resolve_run_steps(river);
     let total = steps.len();
     for (index, step) in steps.iter().enumerate() {
         eprintln!("[{}/{total}] {}", index + 1, step.script.display());
-        // Steps run with the directory of the pipeline that listed them as
+        // Steps run with the directory of the river that listed them as
         // cwd, so relative artifact paths resolve consistently.
         let script = step
             .script

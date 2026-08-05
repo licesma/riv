@@ -16,4 +16,4 @@ error[consume-before-produce]: `model.pkl` is consumed before it is produced
  5 | model = riv_in[Model]("model.pkl")
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^ `model.pkl` does not exist yet
    |
-   = note: no step in this pipeline produces it, and it does not exist on disk
+   = note: no step in this river produces it, and it does not exist on disk

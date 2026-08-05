@@ -48,7 +48,7 @@ fn python_runtime_dir() -> PathBuf {
 
 fn typed_project(test: &CliTest) {
     test.write(
-        "pipeline.yaml",
+        "river.yaml",
         "name: demo\nsteps:\n  - preprocess.py\n  - train.py\n",
     );
     test.write(
@@ -73,7 +73,7 @@ fn check_clean_project() {
     success: true
     exit_code: 0
     ----- stdout -----
-    Checked 1 pipeline: 0 errors, 0 warnings.
+    Checked 1 river: 0 errors, 0 warnings.
 
     ----- stderr -----
     ");
@@ -82,7 +82,7 @@ fn check_clean_project() {
 #[test]
 fn check_warns_on_unannotated_io() {
     let test = CliTest::new();
-    test.write("pipeline.yaml", "name: demo\nsteps:\n  - produce.py\n");
+    test.write("river.yaml", "name: demo\nsteps:\n  - produce.py\n");
     test.write(
         "produce.py",
         "from riv import riv_out\n\nriv_out([1], \"users.pkl\")\n",
@@ -99,7 +99,7 @@ fn check_warns_on_unannotated_io() {
        |
        = help: attach a schema (`riv_out[UsersDf](df, path)`) or mark the decision with `riv_out[Untyped](...)`
 
-    Checked 1 pipeline: 0 errors, 1 warning.
+    Checked 1 river: 0 errors, 1 warning.
 
     ----- stderr -----
     "#);
@@ -109,7 +109,7 @@ fn check_warns_on_unannotated_io() {
 fn strict_promotes_unannotated_io_to_error() {
     let test = CliTest::new();
     test.write(
-        "pipeline.yaml",
+        "river.yaml",
         "name: demo\nstrict: true\nsteps:\n  - produce.py\n",
     );
     test.write(
@@ -128,7 +128,7 @@ fn strict_promotes_unannotated_io_to_error() {
        |
        = help: attach a schema (`riv_out[UsersDf](df, path)`) or mark the decision with `riv_out[Untyped](...)`
 
-    Checked 1 pipeline: 1 error, 0 warnings.
+    Checked 1 river: 1 error, 0 warnings.
 
     ----- stderr -----
     "#);
@@ -137,7 +137,7 @@ fn strict_promotes_unannotated_io_to_error() {
 #[test]
 fn concise_output_format() {
     let test = CliTest::new();
-    test.write("pipeline.yaml", "name: demo\nsteps:\n  - produce.py\n");
+    test.write("river.yaml", "name: demo\nsteps:\n  - produce.py\n");
     test.write(
         "produce.py",
         "from riv import riv_out\n\nriv_out([1], \"users.pkl\")\n",
@@ -149,21 +149,21 @@ fn concise_output_format() {
     exit_code: 0
     ----- stdout -----
     warning[unannotated-io] produce.py:3:1: artifact `users.pkl` is produced without a schema; the checker cannot see it
-    Checked 1 pipeline: 0 errors, 1 warning.
+    Checked 1 river: 0 errors, 1 warning.
 
     ----- stderr -----
     ");
 }
 
 #[test]
-fn single_pipeline_check() {
+fn single_river_check() {
     let test = CliTest::new();
     typed_project(&test);
-    assert_cmd_snapshot!(test.command().args(["pipeline.yaml", "check"]), @r"
+    assert_cmd_snapshot!(test.command().args(["river.yaml", "check"]), @r"
     success: true
     exit_code: 0
     ----- stdout -----
-    Checked 1 pipeline: 0 errors, 0 warnings.
+    Checked 1 river: 0 errors, 0 warnings.
 
     ----- stderr -----
     ");
@@ -173,7 +173,7 @@ fn single_pipeline_check() {
 fn run_executes_steps_in_order() {
     let test = CliTest::new();
     typed_project(&test);
-    assert_cmd_snapshot!(test.command().args(["pipeline.yaml", "run"]), @r"
+    assert_cmd_snapshot!(test.command().args(["river.yaml", "run"]), @r"
     success: true
     exit_code: 0
     ----- stdout -----
@@ -187,10 +187,10 @@ fn run_executes_steps_in_order() {
 }
 
 #[test]
-fn bare_pipeline_runs() {
+fn bare_river_runs() {
     let test = CliTest::new();
     typed_project(&test);
-    assert_cmd_snapshot!(test.command().arg("pipeline.yaml"), @r"
+    assert_cmd_snapshot!(test.command().arg("river.yaml"), @r"
     success: true
     exit_code: 0
     ----- stdout -----
@@ -204,9 +204,9 @@ fn bare_pipeline_runs() {
 }
 
 #[test]
-fn run_refuses_pipeline_that_does_not_check() {
+fn run_refuses_river_that_does_not_check() {
     let test = CliTest::new();
-    test.write("pipeline.yaml", "name: demo\nsteps:\n  - train.py\n");
+    test.write("river.yaml", "name: demo\nsteps:\n  - train.py\n");
     test.write(
         "schemas.py",
         "from riv import Schema\n\n\nclass UsersDf(Schema): ...\n",
@@ -215,7 +215,7 @@ fn run_refuses_pipeline_that_does_not_check() {
         "train.py",
         "from riv import riv_in\nfrom schemas import UsersDf\n\nusers = riv_in[UsersDf](\"users.pkl\")\nprint(\"ran anyway\")\n",
     );
-    assert_cmd_snapshot!(test.command().args(["pipeline.yaml", "run"]), @r#"
+    assert_cmd_snapshot!(test.command().args(["river.yaml", "run"]), @r#"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -225,31 +225,31 @@ fn run_refuses_pipeline_that_does_not_check() {
      4 | users = riv_in[UsersDf]("users.pkl")
        |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `users.pkl` does not exist yet
        |
-       = note: no step in this pipeline produces it, and it does not exist on disk
+       = note: no step in this river produces it, and it does not exist on disk
 
-    Checked 1 pipeline: 1 error, 0 warnings.
+    Checked 1 river: 1 error, 0 warnings.
 
     ----- stderr -----
-    error: `pipeline.yaml` does not check; refusing to run (use --no-check to override)
+    error: `river.yaml` does not check; refusing to run (use --no-check to override)
     "#);
 }
 
 #[test]
 fn run_no_check_is_the_escape_hatch() {
     let test = CliTest::new();
-    test.write("pipeline.yaml", "name: demo\nsteps:\n  - step.py\n");
+    test.write("river.yaml", "name: demo\nsteps:\n  - step.py\n");
     test.write("step.py", "print(\"unchecked step ran\")\n");
-    // The pipeline is fine, but --no-check must skip checking entirely; make
+    // The river is fine, but --no-check must skip checking entirely; make
     // it one that would fail check.
     test.write(
         "step.py",
         "from riv import Untyped, riv_out\nimport pathlib\n\nriv_out[Untyped]([1], \"blob.pkl\")\nprint(\"unchecked step ran\")\n",
     );
     test.write(
-        "pipeline.yaml",
+        "river.yaml",
         "name: demo\nsteps:\n  - step.py\n  - ghost.py\n",
     );
-    assert_cmd_snapshot!(test.command().args(["pipeline.yaml", "run", "--no-check"]), @r"
+    assert_cmd_snapshot!(test.command().args(["river.yaml", "run", "--no-check"]), @r"
     success: true
     exit_code: 0
     ----- stdout -----
@@ -264,12 +264,12 @@ fn run_no_check_is_the_escape_hatch() {
 fn run_propagates_step_failure() {
     let test = CliTest::new();
     test.write(
-        "pipeline.yaml",
+        "river.yaml",
         "name: demo\nsteps:\n  - fail.py\n  - never.py\n",
     );
     test.write("fail.py", "import sys\n\nprint(\"failing\")\nsys.exit(3)\n");
     test.write("never.py", "print(\"must not run\")\n");
-    assert_cmd_snapshot!(test.command().args(["pipeline.yaml", "run"]), @r"
+    assert_cmd_snapshot!(test.command().args(["river.yaml", "run"]), @r"
     success: false
     exit_code: 3
     ----- stdout -----
@@ -290,7 +290,7 @@ fn unknown_subcommand_is_a_usage_error() {
     ----- stdout -----
 
     ----- stderr -----
-    error: unrecognized subcommand or pipeline `frobnicate`
+    error: unrecognized subcommand or river `frobnicate`
 
     Usage: riv <COMMAND>
 
@@ -325,10 +325,10 @@ fn examples_check_clean_and_run() {
             example.display(),
             String::from_utf8_lossy(&check.stdout)
         );
-        let executed = run(&["pipeline.yaml", "run"]);
+        let executed = run(&["river.yaml", "run"]);
         assert!(
             executed.status.success(),
-            "`riv pipeline.yaml run` failed in {}:\n{}{}",
+            "`riv river.yaml run` failed in {}:\n{}{}",
             example.display(),
             String::from_utf8_lossy(&executed.stdout),
             String::from_utf8_lossy(&executed.stderr)

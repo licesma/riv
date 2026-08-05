@@ -1,24 +1,24 @@
-//! riv's static checker: parse pipelines, scan Python steps, resolve schemas,
+//! riv's static checker: parse rivers, scan Python steps, resolve schemas,
 //! and verify the artifact-passing layer between scripts. The checker is the
 //! product; diagnostics quality is the UX.
 
 pub mod checks;
 pub mod diagnostic;
-pub mod pipeline;
 pub mod python;
 pub mod render;
+pub mod river;
 pub mod rules;
 
 use std::path::{Path, PathBuf};
 
 use diagnostic::{CheckContext, Diagnostic, Severity};
-use pipeline::ResolvedStep;
+use river::ResolvedStep;
 
-/// The result of checking one or more root pipelines.
+/// The result of checking one or more root rivers.
 #[derive(Debug)]
 pub struct CheckResult {
-    /// The pipeline YAMLs that were checked, in order.
-    pub pipelines: Vec<PathBuf>,
+    /// The river YAMLs that were checked, in order.
+    pub rivers: Vec<PathBuf>,
     pub diagnostics: Vec<Diagnostic>,
 }
 
@@ -38,41 +38,41 @@ impl CheckResult {
     }
 }
 
-/// `riv check`: discover every pipeline under `root` and check each as a
-/// root. Identical diagnostics arising from a pipeline being checked both
-/// standalone and as a sub-pipeline are deduplicated.
+/// `riv check`: discover every river under `root` and check each as a
+/// root. Identical diagnostics arising from a river being checked both
+/// standalone and as a sub-river are deduplicated.
 pub fn check_all(root: &Path) -> CheckResult {
-    let pipelines = pipeline::discover_pipelines(root);
+    let rivers = river::discover_rivers(root);
     let mut ctx = CheckContext::new();
-    for path in &pipelines {
+    for path in &rivers {
         checks::check_root(path, &mut ctx);
     }
     let mut diagnostics = ctx.into_diagnostics();
     dedup_and_sort(&mut diagnostics);
     CheckResult {
-        pipelines,
+        rivers,
         diagnostics,
     }
 }
 
-/// `riv <pipeline> check`: check a single root pipeline.
-pub fn check_pipeline(yaml: &Path) -> CheckResult {
+/// `riv <river> check`: check a single root river.
+pub fn check_river(yaml: &Path) -> CheckResult {
     let mut ctx = CheckContext::new();
     checks::check_root(yaml, &mut ctx);
     let mut diagnostics = ctx.into_diagnostics();
     dedup_and_sort(&mut diagnostics);
     CheckResult {
-        pipelines: vec![yaml.to_path_buf()],
+        rivers: vec![yaml.to_path_buf()],
         diagnostics,
     }
 }
 
-/// Resolve the ordered Python steps of a pipeline for execution. Structural
+/// Resolve the ordered Python steps of a river for execution. Structural
 /// diagnostics found during expansion are discarded here — `run` implies
 /// `check`, so the caller has already refused to start on errors.
 pub fn resolve_run_steps(yaml: &Path) -> Vec<ResolvedStep> {
     let mut ctx = CheckContext::new();
-    pipeline::expand(yaml, &mut ctx)
+    river::expand(yaml, &mut ctx)
 }
 
 pub(crate) fn dedup_and_sort(diagnostics: &mut Vec<Diagnostic>) {

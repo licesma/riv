@@ -1,4 +1,4 @@
-"""riv runtime: typed artifact IO for data pipelines.
+"""riv runtime: typed artifact IO for rivers (data pipelines).
 
 The runtime is deliberately tiny and pure Python. Schemas are erased at
 runtime (like TypeScript annotations): ``riv_in[UsersDf](path)`` behaves
