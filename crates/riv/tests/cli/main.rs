@@ -159,7 +159,7 @@ fn concise_output_format() {
 fn single_river_check() {
     let test = CliTest::new();
     typed_project(&test);
-    assert_cmd_snapshot!(test.command().args(["river.yaml", "check"]), @r"
+    assert_cmd_snapshot!(test.command().args(["check", "river.yaml"]), @r"
     success: true
     exit_code: 0
     ----- stdout -----
@@ -170,10 +170,10 @@ fn single_river_check() {
 }
 
 #[test]
-fn run_executes_steps_in_order() {
+fn bare_riv_runs_the_cwd_river() {
     let test = CliTest::new();
     typed_project(&test);
-    assert_cmd_snapshot!(test.command().args(["river.yaml", "run"]), @r"
+    assert_cmd_snapshot!(test.command(), @r"
     success: true
     exit_code: 0
     ----- stdout -----
@@ -241,7 +241,7 @@ fn directory_check_verb() {
     let test = CliTest::new();
     test.write("train/river.yaml", "name: train\nsteps:\n  - step.py\n");
     test.write("train/step.py", "print(\"step ran\")\n");
-    assert_cmd_snapshot!(test.command().args(["train", "check"]), @"
+    assert_cmd_snapshot!(test.command().args(["check", "train"]), @"
     success: true
     exit_code: 0
     ----- stdout -----
@@ -267,6 +267,22 @@ fn directory_without_river_yaml_lists_candidates() {
 }
 
 #[test]
+fn check_recursive_discovers_nested_rivers() {
+    let test = CliTest::new();
+    typed_project(&test);
+    test.write("train/river.yaml", "name: train\nsteps:\n  - step.py\n");
+    test.write("train/step.py", "print(\"step ran\")\n");
+    assert_cmd_snapshot!(test.command().args(["check", "-r"]), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Checked 2 rivers: 0 errors, 0 warnings.
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn run_refuses_river_that_does_not_check() {
     let test = CliTest::new();
     test.write("river.yaml", "name: demo\nsteps:\n  - train.py\n");
@@ -278,7 +294,7 @@ fn run_refuses_river_that_does_not_check() {
         "train.py",
         "from riv import riv_in\nfrom schemas import UsersDf\n\nusers = riv_in[UsersDf](\"users.pkl\")\nprint(\"ran anyway\")\n",
     );
-    assert_cmd_snapshot!(test.command().args(["river.yaml", "run"]), @r#"
+    assert_cmd_snapshot!(test.command().args(["river.yaml"]), @r#"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -312,7 +328,7 @@ fn run_no_check_is_the_escape_hatch() {
         "river.yaml",
         "name: demo\nsteps:\n  - step.py\n  - ghost.py\n",
     );
-    assert_cmd_snapshot!(test.command().args(["river.yaml", "run", "--no-check"]), @r"
+    assert_cmd_snapshot!(test.command().args(["river.yaml", "--no-check"]), @r"
     success: true
     exit_code: 0
     ----- stdout -----
@@ -332,7 +348,7 @@ fn run_propagates_step_failure() {
     );
     test.write("fail.py", "import sys\n\nprint(\"failing\")\nsys.exit(3)\n");
     test.write("never.py", "print(\"must not run\")\n");
-    assert_cmd_snapshot!(test.command().args(["river.yaml", "run"]), @r"
+    assert_cmd_snapshot!(test.command().args(["river.yaml"]), @r"
     success: false
     exit_code: 3
     ----- stdout -----
@@ -355,7 +371,7 @@ fn unknown_subcommand_is_a_usage_error() {
     ----- stderr -----
     error: unrecognized subcommand, river, or directory `frobnicate`
 
-    Usage: riv <COMMAND>
+    Usage: riv [COMMAND]
 
     For more information, try '--help'.
     ");
@@ -388,10 +404,10 @@ fn examples_check_clean_and_run() {
             example.display(),
             String::from_utf8_lossy(&check.stdout)
         );
-        let executed = run(&["river.yaml", "run"]);
+        let executed = run(&["river.yaml"]);
         assert!(
             executed.status.success(),
-            "`riv river.yaml run` failed in {}:\n{}{}",
+            "`riv river.yaml` failed in {}:\n{}{}",
             example.display(),
             String::from_utf8_lossy(&executed.stdout),
             String::from_utf8_lossy(&executed.stderr)

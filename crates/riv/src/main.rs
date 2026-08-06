@@ -1,14 +1,15 @@
 //! The riv CLI: a thin dispatch layer over `riv_checker`.
 //!
-//! Verbs:
+//! Grammar: bare path runs, `riv check [paths]` checks.
 //! ```text
-//! riv check              # validate all rivers under the current directory
-//! riv <river> check   # validate one river
-//! riv <river>         # execute one river (implies check; --no-check)
-//! riv <river> run     # same, explicit form
+//! riv                    # run ./river.yaml
+//! riv <river>            # run one river (implies check; --no-check)
+//! riv check              # validate ./river.yaml
+//! riv check <rivers...>  # validate the given rivers
+//! riv check -r [dirs...] # discover and validate every river beneath
 //! ```
 //!
-//! `<river>` is a YAML path or a directory; a directory means its
+//! A river argument is a YAML path or a directory; a directory means its
 //! `river.yaml`. Verbs win: a directory named `check` needs `riv check/`.
 
 use std::io::Write;
@@ -18,72 +19,79 @@ use std::process::ExitCode;
 use clap::{Parser, Subcommand};
 
 use riv_checker::render::{OutputFormat, render_to_string};
-use riv_checker::{CheckResult, check_all, check_river, resolve_run_steps};
+use riv_checker::{CheckResult, check_river, check_rivers, discover_rivers, resolve_run_steps};
 
 #[derive(Parser)]
 #[command(
     name = "riv",
     version,
     about = "Typed data rivers for Python",
-    after_help = "`riv <river.yaml>` runs one river; `riv <dir>` runs the directory's river.yaml; `riv <river> check` validates it."
+    after_help = "Bare path runs, `riv check [paths]` checks. No path means `.`; a directory means its river.yaml."
 )]
 struct Cli {
     #[command(subcommand)]
-    command: Command,
+    command: Option<Command>,
 }
 
 #[derive(Subcommand)]
 enum Command {
-    /// Validate all rivers under the current directory.
+    /// Validate rivers: `./river.yaml` by default, the given ones otherwise.
     Check {
+        /// Rivers to check: YAML paths or directories (default: `.`).
+        paths: Vec<String>,
+        /// Discover and check every river under each directory.
+        #[arg(short, long)]
+        recursive: bool,
         /// Output format: full, concise, json, or github.
         #[arg(long, default_value = "full")]
         output_format: String,
     },
-    /// `riv <river.yaml> [check|run]` (bare form runs).
+    /// `riv <river>` runs it: a YAML path, or a directory's river.yaml.
     #[command(external_subcommand)]
     River(Vec<String>),
 }
 
-/// Arguments after `riv <river.yaml>`, parsed with clap for real
-/// `--help`/error behavior.
+/// Arguments after `riv <river>`, parsed with clap for real `--help`/error
+/// behavior.
 #[derive(Parser)]
-#[command(name = "riv <river.yaml>", disable_version_flag = true)]
+#[command(name = "riv <river>", disable_version_flag = true)]
 struct RiverCli {
     /// Skip the pre-run check (escape hatch).
     #[arg(long)]
     no_check: bool,
-    /// Defaults to `run` when omitted.
-    #[command(subcommand)]
-    verb: Option<Verb>,
-}
-
-#[derive(Subcommand)]
-enum Verb {
-    /// Validate this river.
-    Check {
-        /// Output format: full, concise, json, or github.
-        #[arg(long, default_value = "full")]
-        output_format: String,
-    },
-    /// Execute this river. Refuses to start unless it type-checks.
-    Run {
-        /// Skip the pre-run check (escape hatch).
-        #[arg(long)]
-        no_check: bool,
-    },
 }
 
 fn main() -> ExitCode {
     match Cli::parse().command {
-        Command::Check { output_format } => {
-            let Some(format) = parse_format(&output_format) else {
-                return ExitCode::from(2);
-            };
-            report(&check_all(Path::new(".")), format)
-        }
-        Command::River(args) => river_command(&args),
+        None => river_command(&[".".to_string()]),
+        Some(Command::Check {
+            paths,
+            recursive,
+            output_format,
+        }) => check_command(&paths, recursive, &output_format),
+        Some(Command::River(args)) => river_command(&args),
     }
+}
+
+fn check_command(paths: &[String], recursive: bool, output_format: &str) -> ExitCode {
+    let Some(format) = parse_format(output_format) else {
+        return ExitCode::from(2);
+    };
+    let dot = [".".to_string()];
+    let paths = if paths.is_empty() { &dot[..] } else { paths };
+    let mut rivers = Vec::new();
+    for arg in paths {
+        let path = PathBuf::from(arg);
+        if recursive && path.is_dir() {
+            rivers.extend(discover_rivers(&path));
+        } else {
+            match resolve_river(arg) {
+                Ok(river) => rivers.push(river),
+                Err(exit) => return exit,
+            }
+        }
+    }
+    report(&check_rivers(rivers), format)
 }
 
 fn river_command(args: &[String]) -> ExitCode {
@@ -92,7 +100,7 @@ fn river_command(args: &[String]) -> ExitCode {
         Err(exit) => return exit,
     };
     let parsed = match RiverCli::try_parse_from(
-        std::iter::once("riv <river.yaml>".to_string()).chain(args[1..].iter().cloned()),
+        std::iter::once("riv <river>".to_string()).chain(args[1..].iter().cloned()),
     ) {
         Ok(parsed) => parsed,
         Err(err) => {
@@ -100,16 +108,7 @@ fn river_command(args: &[String]) -> ExitCode {
             return ExitCode::from(2);
         }
     };
-    match parsed.verb {
-        Some(Verb::Check { output_format }) => {
-            let Some(format) = parse_format(&output_format) else {
-                return ExitCode::from(2);
-            };
-            report(&check_river(&river), format)
-        }
-        Some(Verb::Run { no_check }) => run(&river, no_check || parsed.no_check),
-        None => run(&river, parsed.no_check),
-    }
+    run(&river, parsed.no_check)
 }
 
 /// Resolve the river argument: a YAML path is a river; a directory means

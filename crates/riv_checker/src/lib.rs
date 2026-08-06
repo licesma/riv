@@ -38,11 +38,20 @@ impl CheckResult {
     }
 }
 
-/// `riv check`: discover every river under `root` and check each as a
+/// `riv check -r`: discover every river under `root` and check each as a
 /// root. Identical diagnostics arising from a river being checked both
 /// standalone and as a sub-river are deduplicated.
 pub fn check_all(root: &Path) -> CheckResult {
-    let rivers = river::discover_rivers(root);
+    check_rivers(river::discover_rivers(root))
+}
+
+/// Discover every river YAML under `root` (for `-r` over explicit dirs).
+pub fn discover_rivers(root: &Path) -> Vec<PathBuf> {
+    river::discover_rivers(root)
+}
+
+/// Check the given root rivers, deduplicating identical diagnostics.
+pub fn check_rivers(rivers: Vec<PathBuf>) -> CheckResult {
     let mut ctx = CheckContext::new();
     for path in &rivers {
         checks::check_root(path, &mut ctx);
@@ -55,16 +64,9 @@ pub fn check_all(root: &Path) -> CheckResult {
     }
 }
 
-/// `riv <river> check`: check a single root river.
+/// Check a single root river.
 pub fn check_river(yaml: &Path) -> CheckResult {
-    let mut ctx = CheckContext::new();
-    checks::check_root(yaml, &mut ctx);
-    let mut diagnostics = ctx.into_diagnostics();
-    dedup_and_sort(&mut diagnostics);
-    CheckResult {
-        rivers: vec![yaml.to_path_buf()],
-        diagnostics,
-    }
+    check_rivers(vec![yaml.to_path_buf()])
 }
 
 /// Resolve the ordered Python steps of a river for execution. Structural

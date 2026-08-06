@@ -35,10 +35,10 @@ steps:
 ```
 
 ```bash
-riv check              # validate every river under the current directory
-riv river.yaml check   # validate one river
-riv river.yaml         # execute one river
-riv train              # execute train/river.yaml
+riv                # run ./river.yaml
+riv train          # run train/river.yaml
+riv check          # validate ./river.yaml
+riv check -r       # validate every river beneath
 ```
 
 ## Get started

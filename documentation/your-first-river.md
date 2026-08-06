@@ -35,7 +35,7 @@ steps:
 Run it:
 
 ```bash
-riv river.yaml
+riv
 ```
 
 Each step runs in order, as a plain subprocess. Your scripts did not
