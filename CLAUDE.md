@@ -16,9 +16,9 @@ Not to be confused with **`documentation/`**, which is tracked,
 user-facing documentation linked from the README. It must never
 reference `dev_docs/`.
 
-- **`dev_docs/plan.md`** — WHAT riv is and WHY: index of the six
-  `dev_docs/plan/*.md` docs (vision, adoption, pipelines, checking,
-  execution, tracing). Read the index first; open the specific `plan/*.md`
+- **`dev_docs/plan.md`** — WHAT riv is and WHY: index of the seven
+  `dev_docs/plan/*.md` docs (vision, adoption, pipelines, inputs,
+  checking, execution, tracing). Read the index first; open the specific `plan/*.md`
   your task touches — each is self-contained by design.
 - **`dev_docs/STRUCTURE.md`** — HOW the repo is built: index of the four
   `dev_docs/structure/*.md` docs (workspace, packaging, diagnostics,
@@ -32,6 +32,7 @@ Routing by task:
 | vision, philosophy, long-term direction | `dev_docs/plan/vision.md` |
 | MVP path, runtime API, schemas, formats | `dev_docs/plan/adoption.md` |
 | pipeline YAML, steps, scripts vs functions | `dev_docs/plan/pipelines.md` |
+| params, with:, defs, CLI flags, river input: | `dev_docs/plan/inputs.md` |
 | check semantics, gradual typing, strictness | `dev_docs/plan/checking.md` |
 | CLI verbs, run, environments, uv, callables | `dev_docs/plan/execution.md` |
 | impact analysis, blast radius, provenance | `dev_docs/plan/tracing.md` |
